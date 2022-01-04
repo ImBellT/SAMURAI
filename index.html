@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <title>SAMURAI | 空手技自動識別システム</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <link rel="stylesheet" href="style.css" type="text/css">
+    <link rel="icon" href="Assets/favicon.ico">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ext-language_tools.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip"></script>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="js/video-process.js"></script>
+    <script src="js/tech-emulation.js"></script>
+    <script src="js/pose-emulation.js"></script>
+    <script src="js/feature-conversion.js"></script>
+    <script src="js/sketch.js"></script>
+</head>
+<body>
+<div style="padding: 10px">
+    <h1>空手技判別システム『SAMURAI』</h1>
+    <p><a href="https://github.com/ImBellT/samurai">更新履歴 (GitHub)</a></p>
+</div>
+<div class="parent">
+    <div class="child1">
+        <!-- 出力結果 -->
+        <table class="info-table">
+            <thead>
+            <tr>
+                <th>プレビュー</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>
+                    <canvas id="output_vid"></canvas>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <p id="status">処理状況：待機中（アップロード待ち）</p>
+        <table class="info-table">
+            <thead>
+            <tr>
+                <th class="info-table-other">検出結果</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>
+                    <div id="chart_div"></div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <table class="info-table">
+            <thead>
+            <tr>
+                <th class="info-table-other">検出座標</th>
+                <th class="info-table-other">説明変数</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>
+                    <p id="origin_param">未解析</p>
+                </td>
+                <td>
+                    <p id="master_param">未解析</p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <table class="info-table">
+            <thead>
+            <tr>
+                <th class="info-table-other">使用モデル情報</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>
+                    <p id="model_param">未解析</p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <!-- コマンド入力エリア -->
+    <div class="child2">
+        <div class="operation-area">
+            <button class="btn btn-main" id="send_data" title="技の予測を開始します">処理実行</button>
+            <button class="btn btn-main" id="save_result" title="予測結果のダウンロードは推定終了後に行えます" disabled>予測結果DL</button>
+            <button class="btn btn-main" id="save_pose" title="骨格のダウンロードは推定終了後に行えます" disabled>推定骨格DL</button>
+            <button class="btn btn-main" id="save_model" title="モデルのダウンロードは独自学習時のみ可能です" disabled>モデルDL</button>
+            <button class="btn btn-main" id="run_test" title="この項目は開発・デバッグ時のみ使用してください">デバッグ実行</button>
+        </div>
+        <table class="input-box">
+            <thead>
+            <tr>
+                <th>
+                    <p>映像アップロード</p>
+                </th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>
+                    <div id="vid-upload-area">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" id="vid-upload-icon">
+                            <defs>
+                                <style>.cls-1 {
+                                    fill: #e6e6e6;
+                                }
+
+                                .cls-2 {
+                                    fill: #666;
+                                }</style>
+                            </defs>
+                            <rect class="cls-1" x="87.34" y="252.28" width="825.31" height="495.44" rx="41.75"/>
+                            <path class="cls-2"
+                                  d="M870.91,242.28H129.09A51.82,51.82,0,0,0,77.34,294V706a51.82,51.82,0,0,0,51.75,51.75H870.91A51.82,51.82,0,0,0,922.66,706V294A51.82,51.82,0,0,0,870.91,242.28ZM97.34,294a31.79,31.79,0,0,1,31.75-31.75H259.5V366.14H97.34Zm0,92.11H259.5V490H97.34Zm0,123.86H259.5V613.86H97.34Zm31.75,227.72A31.79,31.79,0,0,1,97.34,706V633.86H259.5V737.72Zm150.41,0V262.28h441V737.72ZM902.66,706a31.79,31.79,0,0,1-31.75,31.75H740.5V633.86H902.66Zm0-92.11H740.5V510H902.66Zm0-123.86H740.5V386.14H902.66ZM740.5,366.14V262.28H870.91A31.79,31.79,0,0,1,902.66,294v72.11Z"/>
+                            <path class="cls-2"
+                                  d="M434.31,603.61a28,28,0,0,1-27.89-27.94V424.33a27.89,27.89,0,0,1,41.84-24.16l131.06,75.67a27.9,27.9,0,0,1,0,48.32L448.26,599.83A27.86,27.86,0,0,1,434.31,603.61Zm0-187.2a8.22,8.22,0,0,0-4,1.08,7.78,7.78,0,0,0-3.94,6.84V575.67a7.89,7.89,0,0,0,11.84,6.84l131.06-75.67a7.9,7.9,0,0,0,0-13.68L438.26,417.49A7.79,7.79,0,0,0,434.35,416.41Z"/>
+                        </svg>
+                        <video preload="auto" id="vid-file-prv-area" controls></video>
+                        <p style="margin-top: 0" id="vid_file_name_sub">ここに動画ファイルをドラッグ&ドロップしてください</p>
+                        <p id="vid_file_name">―　または　―</p>
+                        <div style="padding-bottom: 10px; padding-top: 20px">
+                            <button class="btn-main" id="upload-btn">動画ファイルを選択</button>
+                            <input id="vid_file" class="btn-main" type="file" accept="video/*">
+                        </div>
+                    </div>
+                    <p class="disc-input">最大サイズ2GB・解像度の制限はありません（※ただし推定される解像度は最大1920×1080です）<br>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <table class="input-box">
+            <thead>
+            <tr>
+                <th colspan="2" id="bone-option-label">
+                    <p style="float: left">骨格推定（CNN）オプション</p>
+                    <p style="float: right"><i id="bone-option-icon"></i></p>
+                </th>
+            </tr>
+            </thead>
+            <tbody id="bone-option">
+            <tr>
+                <td colspan="2">
+                    <p><label for="pose_model">使用モデル</label>
+                        <select class="main-input-full" id="pose_model">
+                            <option value="pose_net">PoseNet（アーキテクチャ：ResNet50）</option>
+                            <option value="blaze_pose">Blaze Pose Heavy（アーキテクチャ：MediaPipe）※単体でのフォーム映像でのみ使用可能</option>
+                            <option value="move_net_lighting" selected>MoveNet Lighting（アーキテクチャ：MobileNet V2）</option>
+                            <option value="move_net_thunder">MoveNet Thunder（アーキテクチャ：MobileNet V2）※単体でのフォーム映像でのみ使用可能
+                            </option>
+                        </select>
+                    </p>
+                    <p class="disc-input">骨格推定に使用するモデルを選択してください。（TensorFlow Hub内のモデルを起用）</p>
+                </td>
+            </tr>
+            <tr id="posenet-option">
+                <td>
+                    <p><label for="output_stride">出力ストライド[px]</label>
+                        <select class="main-input-full" id="output_stride">
+                            <option value="16" selected>16（高精度・低速）</option>
+                            <option value="32">32（低精度・高速）</option>
+                        </select>
+                    </p>
+                    <p class="disc-input">推定する際の測定間隔を設定します。</p>
+                </td>
+                <td>
+                    <p><label for="quant_bytes">量子化数[bit]</label>
+                        <select class="main-input-full" id="quant_bytes">
+                            <option value="1">1（1/4圧縮・低精度）</option>
+                            <option value="2">2（1/2圧縮・中精度）</option>
+                            <option value="4" selected>4（非圧縮・高精度）</option>
+                        </select>
+                    </p>
+                    <p class="disc-input">モデルの圧縮率を設定します。</p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <p><label for="input_res">入力映像の処理解像度（高さ）[px]</label>
+                        <input class="main-input-normal" type="number" id="input_res" min="0" max="1080" value="540">
+                    </p>
+                    <p class="disc-input">処理を行う際の解像度を指定入力してください。（0から1080まで）</p>
+                </td>
+                <td>
+                    <p><label for="flame_stride">映像フレームの処理ストライド[ms]</label>
+                        <input class="main-input-normal" type="number" id="flame_stride" min="5" max="5000"
+                               value="33.3">
+                    </p>
+                    <p class="disc-input">処理を行う映像の時間間隔を入力してください。（5から5000まで）</p>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <p>描画スレッショルド<br/>
+                        <label for="input_threshold"></label><input class="main-input-normal" type="number"
+                                                                    id="input_threshold" min="0" max="1" value="0.3"
+                                                                    step="0.01">
+                        <label for="input_threshold_slider"></label><input id="input_threshold_slider" type="range"
+                                                                           min="0" max="1" value="0.3" step="0.01"></p>
+                    <p class="disc-input">プレビューに表示する骨格の最小精度を0.01単位で設定できます。（検出精度が設定値以下の骨格は描画されません）</p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <table class="input-box">
+            <thead>
+            <tr>
+                <th colspan="2" id="dnn-option-label">
+                    <p style="float: left">DNNオプション</p>
+                    <p style="float: right"><i id="dnn-option-icon"></i></p>
+                </th>
+            </tr>
+            </thead>
+            <tbody id="dnn-option">
+            <tr>
+                <td colspan="2">
+                    <p><label for="dnn_model">使用モデル</label>
+                        <select class="main-input-full" id="dnn_model">
+                            <option value="miyabi">MIYABI v1モデル（アーキテクチャ：M-FC v1 & S-FC v1）</option>
+                            <option value="my_model">独自モデルを読み込み（必要：学習済モデル）</option>
+                            <option value="custom">独自学習（必要：学習データ・コーディング）</option>
+                        </select>
+                    </p>
+                    <p class="disc-input">技予測に使用するモデルを選択します。</p>
+                </td>
+            </tr>
+            <tr id="my-data-option1">
+                <td colspan="2">
+                    <p>モデル構成ファイル アップロード<br>
+                        <input id="custom_model_file_json" type="file" accept="application/json">
+                    </p>
+                    <p class="disc-input">学習済みモデルの構成ファイル（JSON形式）をアップロードします。<br/>以下ファイル含めアップロード形式について詳しくは<a
+                            href="https://github.com/imbellt/samurai/blob/main/manual/custom-model.md" target="_blank"
+                            rel="noopener noreferrer">こちら</a>を参照ください。</p>
+                </td>
+            </tr>
+            <tr id="my-data-option2">
+                <td colspan="2">
+                    <p>重み構成ファイル アップロード<br>
+                        <input id="custom_model_file_weight" type="file" accept=".bin">
+                    </p>
+                    <p class="disc-input">学習済みモデルの重み格納ファイル（BIN形式）をアップロードします。</p>
+                </td>
+            </tr>
+            <tr id="my-data-option3">
+                <td colspan="2">
+                    <p>スタンダードファイル アップロード<br>
+                        <input id="custom_model_file_standard" type="file" accept="application/json">
+                    </p>
+                    <p class="disc-input">学習済みモデルで使用したデータの標準偏差や平均値などを格納しているファイル（JSON形式）をアップロードします。</p>
+                </td>
+            </tr>
+            <tr id="custom-option1">
+                <td colspan="2">
+                    <p><label for="architecture_model">使用アーキテクチャ</label>
+                        <select class="main-input-full" id="architecture_model">
+                            <option value="mfc-v1">M-FC v1 & S-FC v1</option>
+                            <option value="custom" disabled>独自（要コーディング）※近日公開</option>
+                        </select>
+                    </p>
+                    <p class="layer-num">必要な入力層数：8</p>
+                    <p class="disc-input">モデルを学習させる際には学習データごとに説明変数が必要です。<br/>
+                        ここでは学習データの座標を説明変数に変換するための変換アーキテクチャを選択します。</p>
+                </td>
+            </tr>
+            <tr id="custom-option2">
+                <td colspan="2">
+                    <p>学習データ アップロード<br>
+                        <input id="custom_data_file" type="file" accept="text/csv">
+                    </p>
+                    <p class="disc-input">モデルを学習するための学習データ（CSVデータ）をアップロードします。<br/>学習データの形式については<a
+                            href="https://github.com/imbellt/samurai/blob/main/manual/make-model.md" target="_blank"
+                            rel="noopener noreferrer">こちら</a>を参照ください。</p>
+                    <p class="disc-input"><b>注意：学習データはすべてモデル学習に回されるため、評価を別途おこないたい際は予めデータを分けておいてください。</b></p>
+                </td>
+            </tr>
+            <tr id="custom-option3">
+                <td colspan="2">
+                    <p>検証データ アップロード<br>
+                        <input id="custom_valid_file" type="file" accept="text/csv">
+                    </p>
+                    <p class="disc-input">モデル検証時のテストデータ（CSVデータ）をアップロードします。
+                    <p class="disc-input"><b>注意：このデータは学習に使用されません</b></p>
+                </td>
+            </tr>
+            <tr id="custom-option4">
+                <td colspan="2">
+                    <p>学習モデル定義</p>
+                    <p class="disc-input">TensorFlow jsの<b>Layers API</b>形式でモデル作成のプログラムを入力してください。（入力方法は<a href="https://www.tensorflow.org/js/guide/train_models?hl=ja">TensorFlow jsの公式ドキュメント</a>を参照ください。）</p>
+                    <div id="editor_a" style="min-height: 300px;">const model = tf.sequential();
+model.add(tf.layers.dense({units: 1024, activation: 'relu', inputShape: [18]}));
+model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
+model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
+model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
+model.add(tf.layers.dense({units: 4, activation: 'softmax'}));
+model.compile({optimizer: 'sgd', loss: 'categoricalCrossentropy', metrics: ['accuracy']});
+return model;</div>
+                    <p class="disc-input">注意事項</p>
+                    <ul class="disc-input">
+                        <li>作成したモデルは最後にcompileを行い、returnで返してください。</li>
+                        <li>compile時、必ずmetricsでaccuracyを定めてください。（学習時に精度取得の関数を通過するため、定めなければエラーが発生します。）</li>
+                        <li>現時点では、エラー時にWeb UI上ではコールバックが行われません。（デバッグ時は管理者ツールのコンソールを常時開いておくことをおすすめします。）</li>
+                        <li>入力層数はアーキテクチャ設定、出力層数は目標ラベルセレクタ設定に表示されている数字と必ず一致させてください。（層数が一致しないと学習時にエラーが発生します。）</li>
+                        <li>モデルの学習はmodel.fit()を使用します。</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr id="custom-option5">
+                <td>
+                    <p>目標ラベルセレクタ</p>
+                    <div>
+                        <ul class="md-checkbox-ul">
+                            <li>
+                                <input type="checkbox" id="sel-1" class="md-checkbox-checkbox" checked>
+                                <label for="sel-1">技種別（突き・回し蹴り・正蹴り・技なし）</label>
+                                <span class="md-checkbox-ripple"></span>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="sel-2" class="md-checkbox-checkbox">
+                                <label for="sel-2">技位置（上段・中段）</label>
+                                <span class="md-checkbox-ripple"></span>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="sel-3" class="md-checkbox-checkbox">
+                                <label for="sel-3">技方向（左右）</label>
+                                <span class="md-checkbox-ripple"></span>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="sel-4" class="md-checkbox-checkbox">
+                                <label for="sel-4">有効打の如何</label>
+                                <span class="md-checkbox-ripple"></span>
+                            </li>
+                        </ul>
+                    </div>
+                    <p class="layer-num" id="output_layer_num">必要な出力層数：4</p>
+                    <p class="disc-input">学習時にどの目標ラベル（通称：技コード）を残しておくかを設定できます。（複数選択可）</p>
+                </td>
+                <td>
+                    <p>ポインティング解像度<br/>
+                        <label for="pointing_res_w"></label><input class="main-input-normal" type="number"
+                                                                   id="pointing_res_w" min="0" max="1920" value="960"> ×
+                        <label for="pointing_res_h"></label><input class="main-input-normal" type="number"
+                                                                   id="pointing_res_h" min="0" max="1080" value="540">
+                    </p>
+                    <p class="disc-input">学習データに記録されている座標は、どの解像度の画像に準拠しているものか設定してください。<br/>（最大1920×1080）</p>
+                </td>
+            </tr>
+            <tr id="custom-option6">
+                <td>
+                    <p>エポック数（学習回数）
+                    <label for="epoch_num"></label><input class="main-input-normal" type="number"
+                                                          id="epoch_num" min="1" max="2000" value="120"></p>
+                    <p class="disc-input">モデルの学習回数を設定します。（最大2000回）</p>
+                </td>
+                <td>
+                    <p>バッチサイズ（損失関数の範囲）
+                    <label for="batch_size"></label><input class="main-input-normal" type="number"
+                                                                          id="batch_size" min="1" max="100" value="32"></p>
+                    <p class="disc-input">モデルを評価する際、損失関数に入力されるデータの大きさ（バッチサイズ）を設定します。（最大100）</p>
+                </td>
+            </tr>
+            <tr id="custom-option7">
+                <td colspan="2">
+                    <p>その他設定</p>
+                    <p class="disc-input">学習時の詳細設定を変更できます。</p>
+                    <ul class="md-checkbox-ul">
+                        <li>
+                            <input type="checkbox" id="debug-mode" class="md-checkbox-checkbox">
+                            <label for="debug-mode">デバッグモードを有効にする</label>
+                            <span class="md-checkbox-ripple"></span>
+                        </li>
+                        <li><p class="disc-input-cb">モデルを学習させる際、DevToolsコンソール上に精度などの過程を表示させます。（速度が低下する可能性があります）</p></li>
+                        <li>
+                            <input type="checkbox" id="model_only" class="md-checkbox-checkbox" checked>
+                            <label for="model_only">モデル作成のみ実行</label>
+                            <span class="md-checkbox-ripple"></span>
+                        </li>
+                        <li><p class="disc-input-cb">実際に予測は行わず、モデルのみを作成します。（モデルのダウンロードは可能です）</p></li>
+                    </ul>
+                    <p class="disc-input">※今後、以下の機能を搭載予定です。<br/>・学習データのテスト自動分割<br/>・データシャッフル</p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="caution-info">
+            <h3>注意事項</h3>
+            <ul>
+                <li style="margin-bottom: 20px;"><p>動画処理はローカル上のJavaScriptを使用するため、処理速度は閲覧しているハードウェアに依存します。</p></li>
+                <li><p>本システムは10フレームごとに予測情報などをIndexedDB内に格納しております。長時間の予測を行うと容量不足によるクエリエラーが発生する可能性がございます。（一定数によるデータ解放の機能は後日実装いたします。）</p></li>
+                <li><p>本システムはGPU（WebGL）を使用しています。使用はなるべくグラフィックスに特化したハードウェアを使用してください。</p></li>
+                <li><p>PCの性能を最大限発揮するため、<!--suppress HtmlUnknownTarget -->
+                    <a href="ms-settings:display-advancedgraphics">こちら</a>をクリックして使用ブラウザのオプションを『高パフォーマンス』に設定してください。<br/>（Windowsのみ対応。Macの場合は<a href="https://support.apple.com/ja-jp/HT202043">こちら</a>を参考にGPUの自動切り替えを無効化してください。）</p></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div style="clear: both"></div>
+<video id="input_vid" preload="auto" class="preview-vid" src=""></video>
+<canvas id="calc_vid" class="preview-vid"></canvas>
+</body>
+<script src="js/variable.js"></script>
+<script src="js/style.js"></script>
+<script src="js/main.js"></script>
+<footer>
+    <p style="font-size: 13px; line-height: 200%; text-align: center; color: grey;">&copy; 2021 Bell.T<br/>このWebサイトのコード、プログラムの著作権は全てBell.Tへ帰属します
+    </p>
+</footer>
+</html>
