@@ -15,7 +15,7 @@
 
 学習データはCSV形式です。以下から空のテンプレートがダウンロードができます。
 
-[学習データ テンプレートCSVをダウンロード](https://imbellt.github.io/samurai/data/data_template.csv)
+[学習データ テンプレートCSVをダウンロード](https://samurai.bellt.me/data/data_template.csv)
 
 テンプレートにはヘッダーと見本のデータが1行含まれています。
 
