@@ -184,18 +184,6 @@ async function downloadModel(models) {
     }
 }
 
-// デバッグ用関数
-async function runDebug() {
-    ChangeInputAvailability(true);
-    const DataFile = "data/learning_data_ss1500_c11limited.csv"; // 学習データを変数化
-    const TestFile = "data/learning_data_ss1500_c11only.csv"; // テストデータを変数化
-    model_data = await UseCustomModel(DataFile, TestFile); // 学習データを使用してモデル作成
-    document.getElementById("save_model").disabled = false; // ダウンロードボタンを有効化（グレーアウトを解除）
-    document.getElementById("save_model").title = "作成したモデルをダウンロードします";
-    ChangeInputAvailability(false);
-    await downloadModel(model_data);
-}
-
 // ページ読み込み時に発火
 window.addEventListener('load', async () => {
     ResetStyle(); // アコーディオンを初期化
@@ -210,15 +198,10 @@ document.getElementById("save_result").addEventListener('click', () => {
     DownloadDataCSV(result_data, "result.csv");
 });
 document.getElementById("save_model").addEventListener('click', () => {
-    downloadModel().then();
+    downloadModel(model_data).then();
 });
 
 // 処理実行ボタン押し時に発火
 document.getElementById("send_data").addEventListener('click', () => {
     runVideoPoseSimulation().then();
-});
-
-// デバッグボタン押し時に発火
-document.getElementById("run_test").addEventListener('click', () => {
-    runDebug().then();
 });
