@@ -31,17 +31,6 @@ async function runVideoPoseSimulation() {
 
 }
 
-// JSON形式でダウンロード
-function DownloadDataJSON(Data, Filename) {
-    const dataBlob = new Blob([JSON.stringify(Data, null, '')], {type: 'application\/json'}); // 抽出したデータをJSON形式に変換
-    const DownloadUrl = URL.createObjectURL(dataBlob); // JSONデータをURLに変換
-    const downloadOpen = document.createElement('a');
-    downloadOpen.href = DownloadUrl;
-    downloadOpen.download = Filename; // ダウンロード時のファイル名を指定
-    downloadOpen.click(); // 疑似クリック
-    URL.revokeObjectURL(DownloadUrl); // 作成したURLを解放（削除）
-}
-
 // CSV形式でダウンロード
 function DownloadDataCSV(Data, Filename) {
     let csv_string = "";
@@ -192,11 +181,6 @@ async function downloadModel(models) {
 window.addEventListener('load', async () => {
     ResetStyle(); // アコーディオンを初期化
     ResetPreviewVision(); // プレビュー画面を初期化
-});
-
-// ダウンロードボタン押し時に発火
-document.getElementById("save_pose").addEventListener('click', () => {
-    DownloadDataJSON(ResumePoseDB("samurai_db", "pose_store"), "pose.json");
 });
 document.getElementById("save_result").addEventListener('click', () => {
     DownloadDataCSV(result_data, "result.csv");
