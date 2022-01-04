@@ -18,8 +18,8 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
     async function ChoiceModel(){
         let model, param;
         switch (document.getElementById("dnn_model").value){
-            case "miyabi":
-                [model, param] = await LoadModel("model/miyabi_v1/model.json");
+            case "miyabi_v1_5":
+                [model, param] = await LoadModel("model/miyabi_v1.5/model.json");
                 break;
             case "my_model":
                 [model, param] = await LoadModel_Outside(document.getElementById("custom_model_file_json"), document.getElementById("custom_model_file_weight"), document.getElementById("custom_model_file_standard"));

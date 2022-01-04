@@ -1,32 +1,27 @@
-# MIYABI v1モデル 仕様
+# MIYABI v1.5モデル 仕様
 
 ## モデルアーキテクチャ
 Keras Sequentialモデル
 
 ## 説明変数変換アーキテクチャ
-M-FC v1
-（17キーポイント×2の入力に対し8の特徴量を出力）
+M-FC v1.5
+（17キーポイント×2の入力に対し18の特徴量を出力）
 
 ## モデル構成
 ### 入力層
-Dense 8ユニット（活性化関数：Relu）
+Dense 18ユニット（活性化関数：Relu）
 
 ### 隠れ層
-Dense 1024ユニット（活性化関数：Relu） × 3層
+Dense 1024ユニット（活性化関数：Relu） × 4層
 
 ### 出力層
 Dense 4ユニット（活性化関数：ソフトマックス）
 
 ## オプティマイザ
-* 使用オプティマイザ：Adam
-* 学習率：0.001
-* beta1変数：0.9
-* beta2変数：0.999
-* 微小量：なし -> K.epsilon()
-* 各学習の学習減衰率：0.0
-* AMSGrad適用の如何：適用しない
+* 使用オプティマイザ：SGD
+* 学習率：0.01
 
-Adamオプティマイザに関する論文は[こちら](https://arxiv.org/abs/1412.6980v8)
+SGDオプティマイザに関する論文は[こちら](http://jmlr.org/proceedings/papers/v28/sutskever13.pdf)
 
 ## 損失関数
 Categorical Crossentropy（各技に区分する）

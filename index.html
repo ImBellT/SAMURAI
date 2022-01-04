@@ -226,7 +226,7 @@
                 <td colspan="2">
                     <p><label for="dnn_model">使用モデル</label>
                         <select class="main-input-full" id="dnn_model">
-                            <option value="miyabi">MIYABI v1モデル（アーキテクチャ：M-FC v1 & S-FC v1）</option>
+                            <option value="miyabi_v1_5">MIYABI v1.5モデル（アーキテクチャ：M-FC v1 & S-FC v1.5）</option>
                             <option value="my_model">独自モデルを読み込み（必要：学習済モデル）</option>
                             <option value="custom">独自学習（必要：学習データ・コーディング）</option>
                         </select>
@@ -264,11 +264,11 @@
                 <td colspan="2">
                     <p><label for="architecture_model">使用アーキテクチャ</label>
                         <select class="main-input-full" id="architecture_model">
-                            <option value="mfc-v1">M-FC v1 & S-FC v1</option>
+                            <option value="mfc-v1">M-FC v1 & S-FC v1.5</option>
                             <option value="custom" disabled>独自（要コーディング）※近日公開</option>
                         </select>
                     </p>
-                    <p class="layer-num">必要な入力層数：8</p>
+                    <p class="layer-num">必要な入力ユニット数：8</p>
                     <p class="disc-input">モデルを学習させる際には学習データごとに説明変数が必要です。<br/>
                         ここでは学習データの座標を説明変数に変換するための変換アーキテクチャを選択します。</p>
                 </td>
@@ -303,15 +303,14 @@ model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
 model.add(tf.layers.dense({units: 4, activation: 'softmax'}));
-model.compile({optimizer: 'sgd', loss: 'categoricalCrossentropy', metrics: ['accuracy']});
+model.compile({optimizer: tf.train.sgd(0.01), loss: 'categoricalCrossentropy', metrics: ['accuracy']});
 return model;</div>
                     <p class="disc-input">注意事項</p>
                     <ul class="disc-input">
                         <li>作成したモデルは最後にcompileを行い、returnで返してください。</li>
                         <li>compile時、必ずmetricsでaccuracyを定めてください。（学習時に精度取得の関数を通過するため、定めなければエラーが発生します。）</li>
                         <li>現時点では、エラー時にWeb UI上ではコールバックが行われません。（デバッグ時は管理者ツールのコンソールを常時開いておくことをおすすめします。）</li>
-                        <li>入力層数はアーキテクチャ設定、出力層数は目標ラベルセレクタ設定に表示されている数字と必ず一致させてください。（層数が一致しないと学習時にエラーが発生します。）</li>
-                        <li>モデルの学習はmodel.fit()を使用します。</li>
+                        <li>入力ユニット数はアーキテクチャ設定、出力ユニット数は目標ラベルセレクタ設定に表示されている数字と必ず一致させてください。（ユニット数が一致しないと学習時にエラーが発生します。）</li>
                     </ul>
                 </td>
             </tr>
@@ -342,7 +341,7 @@ return model;</div>
                             </li>
                         </ul>
                     </div>
-                    <p class="layer-num" id="output_layer_num">必要な出力層数：4</p>
+                    <p class="layer-num" id="output_layer_num">必要な出力ユニット数：4</p>
                     <p class="disc-input">学習時にどの目標ラベル（通称：技コード）を残しておくかを設定できます。（複数選択可）</p>
                 </td>
                 <td>
