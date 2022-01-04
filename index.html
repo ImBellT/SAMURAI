@@ -23,7 +23,7 @@
 <body>
 <div style="padding: 10px">
     <h1>空手技判別システム『SAMURAI』</h1>
-    <p><a href="https://github.com/ImBellT/samurai">更新履歴 (GitHub)</a></p>
+    <p><a href="https://github.com/ImBellT/samurai">更新履歴 (GitHub)</a> | <a href="https://github.com/ImBellT/samurai/wiki">Wiki (マニュアル・仕様)</a></p>
 </div>
 <div class="parent">
     <div class="child1">
@@ -240,7 +240,7 @@
                         <input id="custom_model_file_json" type="file" accept="application/json">
                     </p>
                     <p class="disc-input">学習済みモデルの構成ファイル（JSON形式）をアップロードします。<br/>以下ファイル含めアップロード形式について詳しくは<a
-                            href="https://github.com/imbellt/samurai/blob/main/manual/custom-model.md" target="_blank"
+                            href="https://github.com/imbellt/samurai/wiki/%E8%87%AA%E8%BA%AB%E3%81%AE%E3%83%A2%E3%83%87%E3%83%AB%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%99%E3%82%8B" target="_blank"
                             rel="noopener noreferrer">こちら</a>を参照ください。</p>
                 </td>
             </tr>
@@ -279,7 +279,7 @@
                         <input id="custom_data_file" type="file" accept="text/csv">
                     </p>
                     <p class="disc-input">モデルを学習するための学習データ（CSVデータ）をアップロードします。<br/>学習データの形式については<a
-                            href="https://github.com/imbellt/samurai/blob/main/manual/make-model.md" target="_blank"
+                            href="https://github.com/imbellt/samurai/wiki/%E3%83%A2%E3%83%87%E3%83%AB%E3%81%AE%E7%8B%AC%E8%87%AA%E5%AD%A6%E7%BF%92" target="_blank"
                             rel="noopener noreferrer">こちら</a>を参照ください。</p>
                     <p class="disc-input"><b>注意：学習データはすべてモデル学習に回されるため、評価を別途おこないたい際は予めデータを分けておいてください。</b></p>
                 </td>
@@ -296,7 +296,7 @@
             <tr id="custom-option4">
                 <td colspan="2">
                     <p>学習モデル定義</p>
-                    <p class="disc-input">TensorFlow jsの<b>Layers API</b>形式でモデル作成のプログラムを入力してください。（入力方法は<a href="https://www.tensorflow.org/js/guide/train_models?hl=ja">TensorFlow jsの公式ドキュメント</a>を参照ください。）</p>
+                    <p class="disc-input">TensorFlow jsの<b>Layers API</b>形式でモデル作成のプログラムを入力してください。（詳細は<a href="https://www.tensorflow.org/js/guide/train_models?hl=ja">TensorFlow jsの公式ドキュメント</a>を参照ください。）</p>
                     <div id="editor_a" style="min-height: 300px;">const model = tf.sequential();
 model.add(tf.layers.dense({units: 1024, activation: 'relu', inputShape: [18]}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
@@ -308,8 +308,8 @@ return model;</div>
                     <p class="disc-input">注意事項</p>
                     <ul class="disc-input">
                         <li>作成したモデルは最後にcompileを行い、returnで返してください。</li>
-                        <li>compile時、必ずmetricsでaccuracyを定めてください。（学習時に精度取得の関数を通過するため、定めなければエラーが発生します。）</li>
-                        <li>現時点では、エラー時にWeb UI上ではコールバックが行われません。（デバッグ時は管理者ツールのコンソールを常時開いておくことをおすすめします。）</li>
+                        <li>compile時は必ずmetricsでaccuracyを定めてください。（学習時に精度取得の関数を通過するため）</li>
+                        <li>現時点では、エラー時にWeb UI上ではコールバックが行われません。（デバッグ時はDevToolsコンソールを常時開いておくことをおすすめします。）</li>
                         <li>入力ユニット数はアーキテクチャ設定、出力ユニット数は目標ラベルセレクタ設定に表示されている数字と必ず一致させてください。（ユニット数が一致しないと学習時にエラーが発生します。）</li>
                     </ul>
                 </td>
@@ -325,23 +325,24 @@ return model;</div>
                                 <span class="md-checkbox-ripple"></span>
                             </li>
                             <li>
-                                <input type="checkbox" id="sel-2" class="md-checkbox-checkbox">
+                                <input type="checkbox" id="sel-2" class="md-checkbox-checkbox" disabled>
                                 <label for="sel-2">技位置（上段・中段）</label>
                                 <span class="md-checkbox-ripple"></span>
                             </li>
                             <li>
-                                <input type="checkbox" id="sel-3" class="md-checkbox-checkbox">
+                                <input type="checkbox" id="sel-3" class="md-checkbox-checkbox" disabled>
                                 <label for="sel-3">技方向（左右）</label>
                                 <span class="md-checkbox-ripple"></span>
                             </li>
                             <li>
-                                <input type="checkbox" id="sel-4" class="md-checkbox-checkbox">
+                                <input type="checkbox" id="sel-4" class="md-checkbox-checkbox" disabled>
                                 <label for="sel-4">有効打の如何</label>
                                 <span class="md-checkbox-ripple"></span>
                             </li>
                         </ul>
                     </div>
                     <p class="layer-num" id="output_layer_num">必要な出力ユニット数：4</p>
+                    <p class="disc-input"><b>現在この機能は使用できません。</b></p>
                     <p class="disc-input">学習時にどの目標ラベル（通称：技コード）を残しておくかを設定できます。（複数選択可）</p>
                 </td>
                 <td>
@@ -395,10 +396,11 @@ return model;</div>
             <h3>注意事項</h3>
             <ul>
                 <li style="margin-bottom: 20px;"><p>動画処理はローカル上のJavaScriptを使用するため、処理速度は閲覧しているハードウェアに依存します。</p></li>
-                <li><p>本システムは10フレームごとに予測情報などをIndexedDB内に格納しております。長時間の予測を行うと容量不足によるクエリエラーが発生する可能性がございます。（一定数によるデータ解放の機能は後日実装いたします。）</p></li>
                 <li><p>本システムはGPU（WebGL）を使用しています。使用はなるべくグラフィックスに特化したハードウェアを使用してください。</p></li>
                 <li><p>PCの性能を最大限発揮するため、<!--suppress HtmlUnknownTarget -->
                     <a href="ms-settings:display-advancedgraphics">こちら</a>をクリックして使用ブラウザのオプションを『高パフォーマンス』に設定してください。<br/>（Windowsのみ対応。Macの場合は<a href="https://support.apple.com/ja-jp/HT202043">こちら</a>を参考にGPUの自動切り替えを無効化してください。）</p></li>
+                <li><p>本システムは1フレームごとに予測情報などをIndexedDB内に格納しております。長時間の予測を行うと容量不足によるクエリエラーが発生する可能性がございます。（一定数によるデータ解放の機能は後日実装いたします）</p></li>
+                <li><p>モデルDL時のCSVデータはUTF-8でエンコードされております。（Excelでは文字化けする可能性がございます）</p></li>
             </ul>
         </div>
     </div>

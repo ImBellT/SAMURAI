@@ -149,39 +149,43 @@ async function downloadModel(models) {
         return [await modelBlob(), await weightBlob()];
     }
 
-    // 取得情報を圧縮
-    async function modelZipper() {
+    // JSZip定義
+    const zip = new JSZip();
 
-        // JSZip定義
-        const zip = new JSZip();
+    // 圧縮するファイルを定義
+    const artifact = await saveModelArtifacts(models);
+    const [model, weights] = await SaveModelTF(artifact);
+    const std = new Blob([JSON.stringify(models[1], null, '')], {type: 'application\/json'});
+    const info_json = new Blob([JSON.stringify({
+        "validationData": models[2].validationData,
+        "params": models[2].params
+    }, null, '')], {type: 'application\/json'});
 
-        // 圧縮するファイルを定義
-        const artifact = await saveModelArtifacts(models);
-        const [model, weights] = await SaveModelTF(artifact);
-        const std = new Blob([JSON.stringify(models[1], null, '')], {type: 'application\/json'});
-        const info = new Blob([JSON.stringify(models[2], null, '')], {type: 'application\/json'});
-
-        // 定義したファイルをアーカイブに追加
-        zip.file("samurai_custom_model.json", model);
-        zip.file("samurai_custom_model_weights.bin", weights);
-        zip.file("samurai_custom_model_standard.json", std);
-        zip.file("samurai_custom_model_info.json", info);
-        zip.folder("分析用CSVファイル");
-
-        zip.generateAsync({type: "blob"}).then(function (dataBlob) {
-            const DownloadUrl = URL.createObjectURL(dataBlob); // BlobデータをURLに変換
-            const downloadOpen = document.createElement('a');
-            downloadOpen.href = DownloadUrl;
-            downloadOpen.download = "samurai_custom_model"; // ダウンロード時のファイル名を指定
-            downloadOpen.click(); // 疑似クリック
-            URL.revokeObjectURL(DownloadUrl); // 作成したURLを解放（削除）
-        });
+    const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
+    const info_csv_data = transpose([models[2].epoch, models[2].history.acc, models[2].history.val_acc, models[2].history.loss, models[2].history.val_loss]);
+    let csv_string = "Epoch（学習回数）,Accuracy（精度）,Val accuracy（評価精度）,Loss（損失）,Val loss（評価損失）\r\n";
+    for (let d of info_csv_data) {
+        csv_string += d.join(","); // 配列ごとの区切りを「,」をつけて一列化
+        csv_string += '\r\n';
     }
+    const info_csv = new Blob([csv_string], {type: "text/csv"}); // 抽出したデータをCSV形式に変換
 
-    let caution = confirm('以下のファイルをZIP形式saveに圧縮し、ダウンロードします。\n\n・モデルの枠組み（JSON）\n・重み（BIN）\n・学習データの平均値や標準偏差等を格納したファイル（JSON）\n・学習精度の履歴（JSON）\n・評価データの分析用データ（CSV）\n\n※ブラウザによっては複数ダウンロードの許可を出す必要がありますのでご注意ください。\n本当に続行しますか？');
-    if (caution) {
-        await modelZipper(model_data);
-    }
+    // 定義したファイルをアーカイブに追加
+    zip.file("samurai_custom_model.json", model);
+    zip.file("samurai_custom_model_weights.bin", weights);
+    zip.file("samurai_custom_model_standard.json", std);
+    let analytics = zip.folder("分析用ファイル");
+    analytics.file("samurai_custom_model_info.json", info_json);
+    analytics.file("samurai_custom_model_info.csv", info_csv);
+
+    zip.generateAsync({type: "blob"}).then(function (dataBlob) {
+        const DownloadUrl = URL.createObjectURL(dataBlob); // BlobデータをURLに変換
+        const downloadOpen = document.createElement('a');
+        downloadOpen.href = DownloadUrl;
+        downloadOpen.download = "samurai_custom_model"; // ダウンロード時のファイル名を指定
+        downloadOpen.click(); // 疑似クリック
+        URL.revokeObjectURL(DownloadUrl); // 作成したURLを解放（削除）
+    });
 }
 
 // ページ読み込み時に発火

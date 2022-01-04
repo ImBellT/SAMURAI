@@ -34,8 +34,8 @@ async function UseCustomModel(csv_file, csv_file_test) {
         mean: [],
         std: [],
         res: [
-            document.getElementById("pointing_res_w").value,
-            document.getElementById("pointing_res_h").value
+            Number(document.getElementById("pointing_res_w").value),
+            Number(document.getElementById("pointing_res_h").value)
         ],
         selector: [
             document.getElementById("sel-1").checked ? 1 : 0,

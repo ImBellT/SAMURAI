@@ -166,15 +166,18 @@ document.getElementById("sel-4").addEventListener('change', () => {
 
 /* ドラッグ&ドロップ処理エリア */
 // ファイルドラッグ時に発火（ドロップ前まで動作）
-document.getElementById("vid-upload-area").addEventListener('dragover', () => {
+document.getElementById("vid-upload-area").addEventListener('dragover', (e) => {
+    e.preventDefault();
     document.getElementById("vid-upload-area").classList.add('dragover');
 });
 // ドラッグアウト時に発火
-document.getElementById("vid-upload-area").addEventListener('dragleave', () => {
+document.getElementById("vid-upload-area").addEventListener('dragleave', (e) => {
+    e.preventDefault();
     document.getElementById("vid-upload-area").classList.remove('dragover');
 });
 // ドロップ時に発火
 document.getElementById("vid-upload-area").addEventListener('drop', (e) => {
+    e.preventDefault();
     document.getElementById("vid-upload-area").classList.remove('dragover');
 
     if (~e.dataTransfer.files[0].type.indexOf("video")) {

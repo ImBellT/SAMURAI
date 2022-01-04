@@ -97,8 +97,8 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
     ResetAllCanvas(ctx, canvas, inputVideo); // 計算用・プレビュー用のキャンバスをリセットする
 
     let percentage = 0;
-    inputVideo.currentTime = 15;
-    while (percentage < 30) {
+    inputVideo.currentTime = 0;
+    while (percentage < 100) {
         await wait(20);
         if (inputVideo.readyState > 1) {
             await EstimatePose(); // 骨格予想
