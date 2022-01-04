@@ -10,7 +10,7 @@ https://samurai.bellt.me
 ※JavaScriptを使用しているため、処理速度はお使いの端末に依存します。
 
 # Wiki
-本システムの使用方法・仕様等をGithub Wiki上に記載しています。
+本システムの使用方法・仕様等を[Github Wiki](https://github.com/imbellt/samurai/wiki)上に記載しています。
 
 # 使用モデル
 本アプリケーションでは骨格検出・技検出の2段階で予測をおこなっており、それぞれ異なるモデルを使用しております。
