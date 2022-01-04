@@ -86,7 +86,6 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
 
     const wait = ms => new Promise(resolve => setTimeout(() => resolve(), ms)); // ミリ秒でタイムアウトする関数を定義
     MakePoseDB("samurai_db", "pose_store");
-    MakePoseDB("samurai_db", "result_store");
     const netModel = await CreatePoseModel(inputVideo, poseParam); // 骨格モデル定義（選択肢ごとに定義）
     const scale = AdjustCanvasToCtx(inputVideo, canvas, poseParam); // キャンバス設定
     const [model, param, info] = await ChoiceModel(); // 設定に準してモデルとパラメータを定義
