@@ -89,44 +89,6 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
         }
     }
 
-    /**
-     * グラフ領域内にGoogle Chartを用いて線グラフを描画します。
-     * @param {string} chart_div 描画を行うdivタグid
-     * @return {object} [描画用chart, 処理データ, オプション]
-     */
-    async function graphInitialize(chart_div) {
-        await google.charts.load('current', {packages: ['corechart', 'line']});
-        const data = new google.visualization.DataTable();
-        data.addColumn('number', '経過フレーム');
-        data.addColumn('number', '突き');
-        data.addColumn('number', '回し蹴り');
-        data.addColumn('number', '正蹴り');
-
-        const options = {
-            chartArea: {width: '70%'},
-            legend: {position: 'bottom'},
-            curveType: 'function',
-            vAxis: {
-                viewWindowMode:'explicit',
-                viewWindow: {
-                    max:1,
-                    min:0
-                }
-            }
-        };
-
-        const chart = new google.visualization.LineChart(document.getElementById(chart_div));
-        return [chart, data, options];
-    }
-
-    function addGraphData(graph_var, add_data) {
-        let re = [time_num];
-        re = re.concat(add_data)
-        re.pop();
-        graph_var[1].addRows([re]);
-        graph_var[0].draw(graph_var[1], graph_var[2]);
-    }
-
     const wait = ms => new Promise(resolve => setTimeout(() => resolve(), ms)); // ミリ秒でタイムアウトする関数を定義
     makeDB("samurai_db"); // 骨格と結果を格納するIndexedDBを作成
     let graph = await graphInitialize('chart_div');
@@ -141,20 +103,20 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
     ResetAllCanvas(ctx, canvas, inputVideo); // 計算用・プレビュー用のキャンバスをリセットする
 
     let percentage = 0;
-    inputVideo.currentTime = 0;
+    inputVideo.currentTime = 55;
     while (percentage < 99) {
         await wait(20);
         if (inputVideo.readyState > 1) {
             await EstimatePose(); // 骨格予想
             TechEmulation(); // 技予想
             drawIt();
-            InsertPoseDB(position, "samurai_db", "pose_store", time_num);
-            InsertPoseDB(result, "samurai_db", "result_store", time_num);
+            insertPoseDB(position, "samurai_db", "pose_store", time_num);
+            insertPoseDB(result, "samurai_db", "result_store", time_num);
             time_num++;
             inputVideo.currentTime += parseFloat(poseParam.flame_stride.value) / 1000; // 動画を設定値の秒数分進める
             percentage = Math.floor((inputVideo.currentTime / inputVideo.duration) * 10000) / 100
             _statusText.main.innerHTML = "動画を処理中…（" + String(percentage) + "%完了・処理フレーム数：" + time_num + "）";
-            addGraphData(graph, result);
+            addGraphData(graph, result, time_num);
         }
     }
     _statusText.origin.innerHTML = "処理完了";

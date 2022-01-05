@@ -141,7 +141,7 @@ function makeDB(DB_name){
  * @param {string} storeName オブジェクトストアの名前
  * @param {int} keyNumber キー番号
  */
-function InsertPoseDB(insert_data, DB_name, storeName, keyNumber){
+function insertPoseDB(insert_data, DB_name, storeName, keyNumber){
 
     const data = {time_stamp: keyNumber, data: insert_data};
 
@@ -161,7 +161,7 @@ function InsertPoseDB(insert_data, DB_name, storeName, keyNumber){
  * @param {string} storeName オブジェクトストアの名前
  * @return {Object} KeyNumberまでの骨格座標
  */
-async function ResumePoseDB(DB_name, storeName){
+async function resumePoseDB(DB_name, storeName){
 
     return new Promise(resolve => {
         let openReq  = indexedDB.open(DB_name, 1);

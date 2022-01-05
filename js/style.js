@@ -1,4 +1,3 @@
-// アコーディオン処理エリア
 // 初期状態を定義
 function ResetStyle() {
     if (_Switch[0]) {
@@ -33,6 +32,7 @@ function InitializeEditor() {
     editor_a.$blockScrolling = Infinity;
 }
 
+// 設定変更時に表示非表示を切り替える
 function ChangeCustomOption() {
 
     function ChangeGroup(custom, my_model) {
@@ -64,8 +64,6 @@ function ChangeCustomOption() {
             ChangeGroup(false, false);
     }
 }
-
-/* 主要調整エリア */
 
 // プレビュー画面を初期化
 function ResetPreviewVision() {
@@ -112,7 +110,7 @@ function ChangeInputAvailability(c) {
     }
 }
 
-/* セレクタでの必要出力層数を定義させる */
+// セレクタでの必要出力層数を定義させる
 function CheckOutputSelector() {
     let OutputLayers = 1
     OutputLayers *= document.getElementById("sel-1").checked ? 4 : 1;
@@ -134,6 +132,50 @@ document.getElementById("sel-3").addEventListener('change', () => {
 document.getElementById("sel-4").addEventListener('change', () => {
     CheckOutputSelector();
 });
+
+/**
+ * グラフ領域内にGoogle Chartを用いて線グラフを描画します。
+ * @param {string} chart_div 描画を行うdivタグid
+ * @return {object} [描画用chart, 処理データ, オプション]
+ */
+async function graphInitialize(chart_div) {
+    await google.charts.load('current', {packages: ['corechart', 'line']});
+    const data = new google.visualization.DataTable();
+    data.addColumn('number', '経過フレーム');
+    data.addColumn('number', '突き');
+    data.addColumn('number', '回し蹴り');
+    data.addColumn('number', '正蹴り');
+
+    const options = {
+        chartArea: {width: '70%'},
+        legend: {position: 'bottom'},
+        curveType: 'function',
+        vAxis: {
+            viewWindowMode: 'explicit',
+            viewWindow: {
+                max: 1,
+                min: 0
+            }
+        }
+    };
+
+    const chart = new google.visualization.LineChart(document.getElementById(chart_div));
+    return [chart, data, options];
+}
+
+/**
+ * グラフデータに新しいデータを追加します。
+ * @param graph_var graphInitializeで取得した変数
+ * @param add_data 追加するデータ
+ * @param val 追加するx軸
+ */
+function addGraphData(graph_var, add_data, val) {
+    let re = [val];
+    re = re.concat(add_data)
+    re.pop();
+    graph_var[1].addRows([re]);
+    graph_var[0].draw(graph_var[1], graph_var[2]);
+}
 
 /* ドラッグ&ドロップ処理エリア */
 // ファイルドラッグ時に発火（ドロップ前まで動作）

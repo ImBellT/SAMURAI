@@ -35,10 +35,14 @@ async function runVideoPoseSimulation() {
 }
 
 // CSV形式でダウンロード
-function DownloadDataCSV(Data, Filename) {
-    let csv_string = "";
+function downloadResult(Data, Filename) {
+    Data.forEach(e => {
+        e.data = [e.time_stamp].concat(e.data);
+        delete e.time_stamp;
+    })
+    let csv_string = "経過フレーム数,突き技の確率,回し蹴りの確率,正蹴りの確率,技なしの確率\r\n";
     for (let d of Data) {
-        csv_string += d.join(","); // 配列ごとの区切りを「,」をつけて一列化
+        csv_string += d.data.join(","); // 配列ごとの区切りを「,」をつけて一列化
         csv_string += '\r\n';
     }
     const dataBlob = new Blob([csv_string], {type: "text/csv"}); // 抽出したデータをCSV形式に変換
@@ -186,7 +190,7 @@ window.addEventListener('load', async () => {
     ResetPreviewVision(); // プレビュー画面を初期化
 });
 document.getElementById("save_result").addEventListener('click', () => {
-    DownloadDataCSV(result_data, "result.csv");
+    resumePoseDB("samurai_db", "result_store").then(e => downloadResult(e, "result.csv"));
 });
 document.getElementById("save_model").addEventListener('click', () => {
     downloadModel(model_data).then();
