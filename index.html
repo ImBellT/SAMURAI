@@ -397,9 +397,8 @@ return model;</div>
                 <li style="margin-bottom: 20px;"><p>動画処理はローカル上のJavaScriptを使用するため、処理速度は閲覧しているハードウェアに依存します。</p></li>
                 <li><p>本システムはGPU（WebGL）を使用しています。使用はなるべくグラフィックスに特化したハードウェアを使用してください。</p></li>
                 <li><p>PCの性能を最大限発揮するため、<!--suppress HtmlUnknownTarget -->
-                    <a href="ms-settings:display-advancedgraphics">こちら</a>をクリックして使用ブラウザのオプションを『高パフォーマンス』に設定してください。<br/>（Windowsのみ対応。Macの場合は<a href="https://support.apple.com/ja-jp/HT202043">こちら</a>を参考にGPUの自動切り替えを無効化してください。）</p></li>
-                <li><p>本システムは1フレームごとに予測情報などをIndexedDB内に格納しております。長時間の予測を行うと容量不足によるクエリエラーが発生する可能性がございます。（一定数によるデータ解放の機能は後日実装いたします）</p></li>
-                <li><p>モデルDL時のCSVデータはUTF-8でエンコードされております。（Excelでは文字化けする可能性がございます）</p></li>
+                    <a href="ms-settings:display-advancedgraphics">こちら</a>をクリックして使用ブラウザのオプションを『高パフォーマンス』に設定してください。<br/>（macOSの場合は<a href="https://support.apple.com/ja-jp/HT202043">こちら</a>を参考にGPUの自動切り替えを無効化してください。）</p></li>
+                <li><p>本システムは1フレームごとに予測情報などをIndexedDB内に格納しております。（長時間の予測を行うと容量不足によるクエリエラーが発生する可能性があります。）</p></li>
             </ul>
         </div>
     </div>

@@ -41,11 +41,12 @@ function downloadResult(Data, Filename) {
         delete e.time_stamp;
     })
     let csv_string = "経過フレーム数,突き技の確率,回し蹴りの確率,正蹴りの確率,技なしの確率\r\n";
-    for (let d of Data) {
+    Data.forEach(d => {
         csv_string += d.data.join(","); // 配列ごとの区切りを「,」をつけて一列化
         csv_string += '\r\n';
-    }
-    const dataBlob = new Blob([csv_string], {type: "text/csv"}); // 抽出したデータをCSV形式に変換
+    });
+    let bom  = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const dataBlob = new Blob([bom, csv_string], {type: "text/csv"}); // 抽出したデータをCSV形式に変換
     const DownloadUrl = URL.createObjectURL(dataBlob); // JSONデータをURLに変換
     const downloadOpen = document.createElement('a');
     downloadOpen.href = DownloadUrl;
@@ -160,11 +161,12 @@ async function downloadModel(models) {
     const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
     const info_csv_data = transpose([models[2].epoch, models[2].history.acc, models[2].history.val_acc, models[2].history.loss, models[2].history.val_loss]);
     let csv_string = "Epoch（学習回数）,Accuracy（精度）,Val accuracy（評価精度）,Loss（損失）,Val loss（評価損失）\r\n";
-    for (let d of info_csv_data) {
-        csv_string += d.join(","); // 配列ごとの区切りを「,」をつけて一列化
+    info_csv_data.forEach(d => {
+        csv_string += d.join(",") ; // 配列ごとの区切りを「,」をつけて一列化
         csv_string += '\r\n';
-    }
-    const info_csv = new Blob([csv_string], {type: "text/csv"}); // 抽出したデータをCSV形式に変換
+    });
+    let bom  = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const info_csv = new Blob([bom, csv_string], {type: "text/csv"}); // 抽出したデータをCSV形式に変換
 
     // 定義したファイルをアーカイブに追加
     zip.file("samurai_custom_model.json", model);
