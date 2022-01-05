@@ -112,35 +112,6 @@ function ChangeInputAvailability(c) {
     }
 }
 
-/* グラフ描写 */
-function DrawGraph(value) {
-    google.charts.load('current', {packages: ['corechart', 'line']});
-    google.charts.setOnLoadCallback(drawMultSeries);
-
-    let value_re = [
-        ['経過フレーム数', '突き', '回し蹴り', '正蹴り'],
-        ['0', 0, 0, 0]
-    ]
-
-    if(value.length > 0){
-        for (let i = 0; i < value.length; i++) {
-            value_re[i + 1] = [String(i), value[i][0], value[i][1], value[i][2]];
-        }
-    }
-
-    function drawMultSeries() {
-        const data = google.visualization.arrayToDataTable(value_re);
-
-        const options = {
-            chartArea: {width: '70%'},
-            legend: {position: 'bottom'}
-        };
-
-        const chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-        chart.draw(data, options);
-    }
-}
-
 /* セレクタでの必要出力層数を定義させる */
 function CheckOutputSelector() {
     let OutputLayers = 1

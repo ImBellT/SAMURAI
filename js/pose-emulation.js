@@ -118,30 +118,32 @@ function ResetAllCanvas(ctx, canvas, video) {
 }
 
 /**
- * 骨格推定座標を格納するためのIndexDBを作成します
+ * 推定情報を格納するためのIndexDBを作成します
  * @param {string} DB_name IndexDBの名前
- * @param {string} storeName オブジェクトストアの名前
  */
-function MakePoseDB(DB_name, storeName){
+function makeDB(DB_name){
+
+    window.indexedDB.deleteDatabase(DB_name);
     let openReq  = indexedDB.open(DB_name, 1); // 注意：バージョン番号は小数点NG
 
     // オブジェクトストアの作成・削除はDBの更新時しかできないので、バージョンを指定して更新
     openReq.onupgradeneeded = function(event){
         let db = event.target.result; // データベースを定義
-        db.createObjectStore(storeName, {keyPath : "time_stamp"});　// time_stamp変数をキーとしてオブジェクトストアを作成
+        db.createObjectStore("pose_store", {keyPath : "time_stamp"});　// time_stamp変数をキーとしてオブジェクトストアを作成
+        db.createObjectStore("result_store", {keyPath : "time_stamp"});　// 同様に予測結果のストアを記録
     }
 }
 
 /**
- * 骨格推定座標をIndexDBに格納します
- * @param {object} position 推定骨格座標（複数可）
+ * 骨格推定座標・予測結果をIndexDBに格納します
+ * @param {object} insert_data 推定情報（複数可）
  * @param {string} DB_name IndexDBの名前
  * @param {string} storeName オブジェクトストアの名前
  * @param {int} keyNumber キー番号
  */
-function InsertPoseDB(position, DB_name, storeName, keyNumber){
+function InsertPoseDB(insert_data, DB_name, storeName, keyNumber){
 
-    const data = {time_stamp: keyNumber, pose: position};
+    const data = {time_stamp: keyNumber, data: insert_data};
 
     let openReq  = indexedDB.open(DB_name, 1);
 
@@ -159,20 +161,20 @@ function InsertPoseDB(position, DB_name, storeName, keyNumber){
  * @param {string} storeName オブジェクトストアの名前
  * @return {Object} KeyNumberまでの骨格座標
  */
-function ResumePoseDB(DB_name, storeName){
+async function ResumePoseDB(DB_name, storeName){
 
-    let openReq  = indexedDB.open(DB_name, 1);
-    let ret_data;
+    return new Promise(resolve => {
+        let openReq  = indexedDB.open(DB_name, 1);
 
-    openReq.onsuccess = function(event){
-        const db = event.target.result;
-        const trans = db.transaction(storeName, 'readonly');
-        const store = trans.objectStore(storeName);
-        const getReq = store.getAll();
+        openReq.onsuccess = function(event){
+            const db = event.target.result;
+            const trans = db.transaction(storeName, 'readonly');
+            const store = trans.objectStore(storeName);
+            const getReq = store.getAll();
 
-        getReq.onsuccess = function(event){
-            ret_data = event.target.result;
+            getReq.onsuccess = function(event){
+                resolve(event.target.result);
+            }
         }
-    }
-    return ret_data;
+    });
 }

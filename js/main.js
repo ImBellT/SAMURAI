@@ -1,11 +1,16 @@
 // 姿勢推定を実行
 async function runVideoPoseSimulation() {
-    if (_inputVideo.getAttribute("src") === "" && (document.getElementById("dnn_model").value !== "custom" || (document.getElementById("dnn_model").value === "custom" && !document.getElementById("model_only").checked))) {
+    if (_inputVideo.getAttribute("src") === ""
+        && (document.getElementById("dnn_model").value !== "custom"
+                || (document.getElementById("dnn_model").value === "custom"
+                && !document.getElementById("model_only").checked))) {
         alert('動画をアップロードしてください。');
         return;
     }
-    if ((document.getElementById("custom_data_file").files[0] || document.getElementById("custom_valid_file").files[0] === undefined) === undefined && document.getElementById("dnn_model").value === "custom") {
-        alert('学習データをアップロードしてください。');
+    if ((document.getElementById("custom_data_file").files[0]
+                || document.getElementById("custom_valid_file").files[0] === undefined)
+        && document.getElementById("dnn_model").value === "custom") {
+        alert('学習データ・評価用データをアップロードしてください。');
         return;
     }
     if (document.getElementById("dnn_model").value === "custom" && document.getElementById("model_only").checked) {
@@ -19,13 +24,11 @@ async function runVideoPoseSimulation() {
         ChangeInputAvailability(false);
     } else {
         // 全部やる
-        result_data = await RunSimulation(_Canvas, _Ctx, _inputVideo, _poseParam); // 姿勢推定
+        await RunSimulation(_Canvas, _Ctx, _inputVideo, _poseParam); // 姿勢推定
         ResetPreviewVision();
         ChangeInputAvailability(true);
         document.getElementById("save_result").disabled = false; // ダウンロードボタンを有効化（グレーアウトを解除）
         document.getElementById("save_result").title = "予測した技確率をCSV形式でダウンロードします";
-        document.getElementById("save_pose").disabled = false; // ダウンロードボタンを有効化（グレーアウトを解除）
-        document.getElementById("save_pose").title = "予測した骨格をJSON形式でダウンロードします";
         ChangeInputAvailability(false);
     }
 

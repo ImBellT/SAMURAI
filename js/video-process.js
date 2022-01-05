@@ -13,11 +13,11 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
     let time_num = 0;
     let position;
     let key;
-    let result = [];
+    let result;
 
-    async function ChoiceModel(){
+    async function ChoiceModel() {
         let model, param;
-        switch (document.getElementById("dnn_model").value){
+        switch (document.getElementById("dnn_model").value) {
             case "miyabi_v1_5":
                 [model, param] = await LoadModel("model/miyabi_v1.5/model.json");
                 break;
@@ -30,35 +30,37 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
                 document.getElementById("save_model").disabled = false; // ダウンロードボタンを有効化（グレーアウトを解除）
                 document.getElementById("save_model").title = "作成したモデルをダウンロードします";
         }
-        if(document.getElementById("dnn_model").value === "custom"){
+        if (document.getElementById("dnn_model").value === "custom") {
             return [model, param, info];
-        }else{
+        } else {
             return [model, param, 0];
         }
 
     }
+
     // 骨格座標を検出する関数
     async function EstimatePose() {
         ResetAllCanvas(ctx, canvas, inputVideo); // 計算用・プレビュー用のキャンバスをリセットする
-        if(poseParam.model.value === "pose_net"){
+        if (poseParam.model.value === "pose_net") {
             position = await netModel.estimatePoses(canvas.calc, {maxPoses: 4});
-        }else{
+        } else {
             position = await netModel.estimatePoses(canvas.calc);
         }
     }
+
     // 検出座標を変換して技予測を行う関数
     function TechEmulation() {
         position = PosDataResize(position, canvas.calc, param);
-        if(position.length !== 0){
+        if (position.length !== 0) {
             key = FeatureConvert(position, param);
         }
         // 特徴量定義&標準化
-        if(key !== undefined){
+        if (key !== undefined) {
             key = [KeyStandardization(key[0], param), KeyStandardization(key[1], param)];
-        }else{
+        } else {
             key = undefined;
         }
-        if(key !== undefined){
+        if (key !== undefined) {
             // ちゃんと説明変数が定義されていたら予測を行う
             let result_once1 = model.predict(tf.tensor([KeyToValue(key[0])]));
             result_once1 = AdjustWithScore(key[0], result_once1);
@@ -66,17 +68,20 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
             result_once2 = AdjustWithScore(key[1], result_once2);
 
             // 正変数と逆変数を比較し高確率のほうを採用する
-            const aryMax = function (a, b) {return Math.max(a, b);} // 大きい数値をとるmax関数を定義
+            const aryMax = function (a, b) {
+                return Math.max(a, b);
+            } // 大きい数値をとるmax関数を定義
             const result_max_1 = result_once1.reduce(aryMax); // 配列分繰り返して最大値を取得
             const result_max_2 = result_once2.reduce(aryMax);
-            result[time_num] = result_max_1 >= result_max_2 ? result_once1 : result_once2;
+            result = result_max_1 >= result_max_2 ? result_once1 : result_once2;
             PrintParam_Key(result_max_1 >= result_max_2 ? key[0] : key[1], _statusText);
-        }else{
-            result[time_num] = [0, 0, 0, 0];
+        } else {
+            result = [0, 0, 0, 0];
         }
     }
+
     // 骨格描画を行う関数
-    function DrawIt(){
+    function drawIt() {
         if (position.length > 0) {
             position = AdjustPoseIndex(position);
             drawPoses(position, ctx, poseParam, scale); // 結果から描画を実行
@@ -84,8 +89,47 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
         }
     }
 
+    /**
+     * グラフ領域内にGoogle Chartを用いて線グラフを描画します。
+     * @param {string} chart_div 描画を行うdivタグid
+     * @return {object} [描画用chart, 処理データ, オプション]
+     */
+    async function graphInitialize(chart_div) {
+        await google.charts.load('current', {packages: ['corechart', 'line']});
+        const data = new google.visualization.DataTable();
+        data.addColumn('number', '経過フレーム');
+        data.addColumn('number', '突き');
+        data.addColumn('number', '回し蹴り');
+        data.addColumn('number', '正蹴り');
+
+        const options = {
+            chartArea: {width: '70%'},
+            legend: {position: 'bottom'},
+            curveType: 'function',
+            vAxis: {
+                viewWindowMode:'explicit',
+                viewWindow: {
+                    max:1,
+                    min:0
+                }
+            }
+        };
+
+        const chart = new google.visualization.LineChart(document.getElementById(chart_div));
+        return [chart, data, options];
+    }
+
+    function addGraphData(graph_var, add_data) {
+        let re = [time_num];
+        re = re.concat(add_data)
+        re.pop();
+        graph_var[1].addRows([re]);
+        graph_var[0].draw(graph_var[1], graph_var[2]);
+    }
+
     const wait = ms => new Promise(resolve => setTimeout(() => resolve(), ms)); // ミリ秒でタイムアウトする関数を定義
-    MakePoseDB("samurai_db", "pose_store");
+    makeDB("samurai_db"); // 骨格と結果を格納するIndexedDBを作成
+    let graph = await graphInitialize('chart_div');
     const netModel = await CreatePoseModel(inputVideo, poseParam); // 骨格モデル定義（選択肢ごとに定義）
     const scale = AdjustCanvasToCtx(inputVideo, canvas, poseParam); // キャンバス設定
     const [model, param, info] = await ChoiceModel(); // 設定に準してモデルとパラメータを定義
@@ -98,23 +142,22 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
 
     let percentage = 0;
     inputVideo.currentTime = 0;
-    while (percentage < 100) {
+    while (percentage < 99) {
         await wait(20);
         if (inputVideo.readyState > 1) {
             await EstimatePose(); // 骨格予想
             TechEmulation(); // 技予想
-            DrawIt();
+            drawIt();
             InsertPoseDB(position, "samurai_db", "pose_store", time_num);
+            InsertPoseDB(result, "samurai_db", "result_store", time_num);
             time_num++;
             inputVideo.currentTime += parseFloat(poseParam.flame_stride.value) / 1000; // 動画を設定値の秒数分進める
             percentage = Math.floor((inputVideo.currentTime / inputVideo.duration) * 10000) / 100
-            _statusText.main.innerHTML = "動画を処理中…（" + String(percentage) + "%完了）→" + time_num;
-            DrawGraph(result);
+            _statusText.main.innerHTML = "動画を処理中…（" + String(percentage) + "%完了・処理フレーム数：" + time_num + "）";
+            addGraphData(graph, result);
         }
     }
     _statusText.origin.innerHTML = "処理完了";
     _statusText.master.innerHTML = "処理完了";
     _statusText.main.innerHTML = "骨格の推定が完了しました。推定データをダウンロードするにはJSONダウンロードをクリックしてください。";
-    return result;
-
 }
