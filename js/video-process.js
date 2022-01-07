@@ -112,9 +112,9 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
     ResetAllCanvas(ctx, canvas, inputVideo); // 計算用・プレビュー用のキャンバスをリセットする
 
     let percentage = 0;
-    let max_percentage = document.getElementById("trim_time_end").value === "" ? 99 : Number(document.getElementById("trim_time_end").value) / inputVideo.duration;
+    let max_percentage = document.getElementById("trim_time_end").value === "" ? 99 : Number(document.getElementById("trim_time_end").value) / inputVideo.duration * 100;
     if(max_percentage >= 99) max_percentage = 99;
-    inputVideo.currentTime = document.getElementById("trim_time_start").value === "" ? 0 : Number(document.getElementById("trim_time_end").value);
+    inputVideo.currentTime = document.getElementById("trim_time_start").value === "" ? 0 : Number(document.getElementById("trim_time_start").value);
     while (percentage < max_percentage) {
         await wait(20);
         if (inputVideo.readyState > 1) {
