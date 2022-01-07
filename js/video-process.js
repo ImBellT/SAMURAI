@@ -112,8 +112,10 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
     ResetAllCanvas(ctx, canvas, inputVideo); // 計算用・プレビュー用のキャンバスをリセットする
 
     let percentage = 0;
-    inputVideo.currentTime = 55;
-    while (percentage < 99) {
+    let max_percentage = document.getElementById("trim_time_end").value === "" ? Number(document.getElementById("trim_time_end").value) / inputVideo.duration : 99;
+    if(max_percentage >= 99) max_percentage = 99;
+    inputVideo.currentTime = document.getElementById("trim_time_start").value === "" ? Number(document.getElementById("trim_time_end").value) : 0;
+    while (percentage < max_percentage) {
         await wait(20);
         if (inputVideo.readyState > 1) {
             await EstimatePose(); // 骨格予想
@@ -124,7 +126,7 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
             time_num++;
             inputVideo.currentTime += parseFloat(poseParam.flame_stride.value) / 1000; // 動画を設定値の秒数分進める
             percentage = Math.floor((inputVideo.currentTime / inputVideo.duration) * 10000) / 100
-            _statusText.main.innerHTML = "動画を処理中…（" + String(percentage) + "%完了・処理フレーム数：" + time_num + "）";
+            _statusText.main.innerHTML = "動画を処理中…（" + String(percentage) + "%完了）<br/>・処理フレーム数：" + time_num + "<br/>・経過秒数（スキップ秒数含む）：" + inputVideo.currentTime + "秒";
             addGraphData(graph, result, time_num);
         }
     }

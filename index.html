@@ -64,7 +64,7 @@
         <table class="info-table">
             <thead>
             <tr>
-                <th class="info-table-other">検出座標</th>
+                <th class="info-table-other">検出座標（攻撃側）</th>
                 <th class="info-table-other">説明変数</th>
             </tr>
             </thead>
@@ -166,6 +166,14 @@
                     <p class="disc-input">骨格推定に使用するモデルを選択してください。（TensorFlow Hub内のモデルを起用）</p>
                 </td>
             </tr>
+            <tr>
+                <td colspan="2">
+                    <p><label for="input_res">入力映像の予測範囲時間</label><br/>
+                        <input class="main-input-normal" type="number" id="trim_time_start" min="0" max="1080" value=""> 秒 ～ <input class="main-input-normal" type="number" id="trim_time_end" min="0" max="1080" value=""> 秒
+                    </p>
+                    <p class="disc-input">予測を開始・終了する動画の秒数を指定できます。（未入力の場合はすべて）</p>
+                </td>
+            </tr>
             <tr id="posenet-option">
                 <td>
                     <p><label for="output_stride">出力ストライド[px]</label>
@@ -197,7 +205,7 @@
                 <td>
                     <p><label for="flame_stride">映像フレームの処理ストライド[ms]</label>
                         <input class="main-input-normal" type="number" id="flame_stride" min="5" max="5000"
-                               value="33.3">
+                               value="33.3" step="0.1">
                     </p>
                     <p class="disc-input">処理を行う映像の時間間隔を入力してください。（5から5000まで）</p>
                 </td>
@@ -419,7 +427,7 @@ return model;</div>
         <div class="caution-info">
             <h3>注意事項</h3>
             <ul>
-                <li style="margin-bottom: 20px;"><p>動画処理はローカル上のJavaScriptを使用するため、処理速度は閲覧しているハードウェアに依存します。</p></li>
+                <li style="margin-bottom: 20px;"><p>入力フォームに対する規則チェック機能は現時点では未実装のため、全角数字などを入力するとサイトがフリーズする可能性があります。くれぐれもご注意ください。</p></li>
                 <li><p>本システムはGPU（WebGL）を使用しています。使用はなるべくグラフィックスに特化したハードウェアを使用してください。</p></li>
                 <li><p>PCの性能を最大限発揮するため、<!--suppress HtmlUnknownTarget -->
                     <a href="ms-settings:display-advancedgraphics">こちら</a>をクリックして使用ブラウザのオプションを『高パフォーマンス』に設定してください。<br/>（macOSの場合は<a href="https://support.apple.com/ja-jp/HT202043">こちら</a>を参考にGPUの自動切り替えを無効化してください。）</p></li>
