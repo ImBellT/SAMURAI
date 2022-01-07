@@ -1,23 +1,22 @@
 @import url('https://use.fontawesome.com/releases/v5.6.1/css/all.css');
 
-@font-face{
-    font-family: 'JetBrains Mono';
-    src: url('https://samurai.bellt.me/Assets/JetBrainsMono-Regular.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-}
-
 *{
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
 }
 
+h1, h2, h3{
+    font-family: 'M PLUS 1p', sans-serif;
+}
+
 p {
+    font-family: 'M PLUS 1p', sans-serif;
     font-size: 14px;
 }
 
 .info-table {
+    font-family: 'M PLUS 1p', sans-serif;
     table-layout: fixed;
     width: 100%;
     border-collapse: collapse;
@@ -44,6 +43,7 @@ p {
     border: 1px solid lightgray;
 }
 .input-box {
+    font-family: 'M PLUS 1p', sans-serif;
     table-layout: fixed;
     width: 100%;
     border-collapse: collapse;
@@ -210,14 +210,20 @@ input[type="range"] {
     padding-bottom: 10px;
 }
 .disc-input {
-    font-size: 14px;
+    font-size: 12px;
     color: gray;
 }
 .disc-input-cb {
     font-size: 12px;
-    margin-top: 0;
-    margin-bottom: 0px;
+    margin-left: 40px;
+    margin-top: -10px;
     color: black;
+}
+.disc-input-cb-sub {
+    font-size: 12px;
+    margin-left: 40px;
+    margin-top: 10px;
+    color: gray;
 }
 .layer-num {
     font-size: 16px;
@@ -226,6 +232,7 @@ input[type="range"] {
 }
 
 .btn-main {
+    font-family: 'M PLUS 1p', sans-serif;
     padding: 1em 2em;
     border: 1px solid silver;
     border-radius: 5px;

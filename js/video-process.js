@@ -16,7 +16,7 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
     let result;
 
     async function ChoiceModel() {
-        let model, param;
+        let model, param, info, data;
         switch (document.getElementById("dnn_model").value) {
             case "miyabi_v1_5":
                 [model, param] = await LoadModel("model/miyabi_v1.5/model.json");
@@ -25,15 +25,24 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
                 [model, param] = await LoadModel_Outside(document.getElementById("custom_model_file_json"), document.getElementById("custom_model_file_weight"), document.getElementById("custom_model_file_standard"));
                 break;
             case "custom":
-                const [DataFile, TestFile] = [URL.createObjectURL(document.getElementById("custom_data_file").files[0]), URL.createObjectURL(document.getElementById("custom_valid_file").files[0])]; // 学習データを変数化
-                [model, param, info] = await UseCustomModel(DataFile, TestFile); // 学習データを使用してモデル作成
+                const DataFile = URL.createObjectURL(document.getElementById("custom_data_file").files[0]); // 学習データを変数化
+                const TestFile = document.getElementById("custom_valid_file").files[0] === null ? URL.createObjectURL(document.getElementById("custom_valid_file").files[0]) : null;
+                document.getElementById("shuffle_seed").value = parseInt(document.getElementById("shuffle_seed").value, 10); // 小数点とかはすべて除去
+                const config = {
+                    debug_mode: document.getElementById("debug-mode").checked,
+                    custom_valid: document.getElementById("custom_valid").checked,
+                    data_shuffle: document.getElementById("data_shuffle").checked,
+                    test_ratio: parseFloat(document.getElementById("valid_ratio").value),
+                    seed: parseInt(document.getElementById("shuffle_seed").value, 10)
+                };
+                [model, param, info, data] = await UseCustomModel(DataFile, TestFile, config); // 学習データを使用してモデル作成
                 document.getElementById("save_model").disabled = false; // ダウンロードボタンを有効化（グレーアウトを解除）
                 document.getElementById("save_model").title = "作成したモデルをダウンロードします";
         }
         if (document.getElementById("dnn_model").value === "custom") {
-            return [model, param, info];
+            return [model, param, info, data];
         } else {
-            return [model, param, 0];
+            return [model, param, 0, 0];
         }
 
     }
@@ -94,8 +103,8 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
     let graph = await graphInitialize('chart_div');
     const netModel = await CreatePoseModel(inputVideo, poseParam); // 骨格モデル定義（選択肢ごとに定義）
     const scale = AdjustCanvasToCtx(inputVideo, canvas, poseParam); // キャンバス設定
-    const [model, param, info] = await ChoiceModel(); // 設定に準してモデルとパラメータを定義
-    model_data = [model, param, info]; // グローバル変数にmodelとparamを代入（ダウンロードできるように）
+    const [model, param, info, data] = await ChoiceModel(); // 設定に準してモデルとパラメータを定義
+    model_data = [model, param, info, data]; // グローバル変数にmodelとparamを代入（ダウンロードできるように）
     document.getElementById("model_param").innerHTML = "※本機能は近日公開";
 
     _statusText.main.innerHTML = "処理状況：モデルの読み込みがすべて終了しました。予測と描画を開始します。";

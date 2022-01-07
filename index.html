@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <link rel="stylesheet" href="style.css" type="text/css">
     <link rel="icon" href="Assets/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
@@ -17,6 +20,7 @@
     <script src="js/video-process.js"></script>
     <script src="js/tech-emulation.js"></script>
     <script src="js/pose-emulation.js"></script>
+    <script src="js/tools.js"></script>
     <script src="js/feature-conversion.js"></script>
     <script src="js/sketch.js"></script>
 </head>
@@ -268,8 +272,7 @@
                         </select>
                     </p>
                     <p class="layer-num">必要な入力ユニット数：8</p>
-                    <p class="disc-input">モデルを学習させる際には学習データごとに説明変数が必要です。<br/>
-                        ここでは学習データの座標を説明変数に変換するための変換アーキテクチャを選択します。</p>
+                    <p class="disc-input">学習データの座標を説明変数に変換するための変換アーキテクチャを選択します。</p>
                 </td>
             </tr>
             <tr id="custom-option2">
@@ -277,26 +280,48 @@
                     <p>学習データ アップロード<br>
                         <input id="custom_data_file" type="file" accept="text/csv">
                     </p>
-                    <p class="disc-input">モデルを学習するための学習データ（CSVデータ）をアップロードします。<br/>学習データの形式については<a
+                    <p class="disc-input">モデルを学習するための学習データ（CSVデータ）をアップロードします。学習データの形式については<a
                             href="https://github.com/imbellt/samurai/wiki/%E3%83%A2%E3%83%87%E3%83%AB%E3%81%AE%E7%8B%AC%E8%87%AA%E5%AD%A6%E7%BF%92" target="_blank"
                             rel="noopener noreferrer">こちら</a>を参照ください。</p>
-                    <p class="disc-input"><b>注意：学習データはすべてモデル学習に回されるため、評価を別途おこないたい際は予めデータを分けておいてください。</b></p>
+                    <ul class="md-checkbox-ul">
+                        <li>
+                            <input type="checkbox" id="custom_valid" class="md-checkbox-checkbox">
+                            <label for="custom_valid">カスタムのテストデータを使用</label>
+                        </li>
+                        <li><p class="disc-input-cb">別途で評価用のテストデータを使用したい場合、こちらのチェックをオンにしてください。</p></li>
+                    </ul>
                 </td>
             </tr>
-            <tr id="custom-option3">
+            <tr id="custom-option3-1">
+                <td>
+                    <p>テストデータ 抽出比率　<label for="valid_ratio"></label><input class="main-input-normal" type="number" id="valid_ratio" min="0" max="1" value="0.2" step="0.01"></p>
+                    <p class="disc-input">学習データの何割をテストデータに回すかを設定します。1を100%としたときの比率を小数点で入力してください。</p>
+                </td>
+                <td>
+                    <ul class="md-checkbox-ul" style="margin-top: 15px;">
+                        <li>
+                            <input type="checkbox" id="data_shuffle" class="md-checkbox-checkbox" checked>
+                            <label for="data_shuffle">抽出前にデータをシャッフルする</label>
+                        </li>
+                        <li><p class="disc-input-cb">テストデータを抽出する前に学習データの順序をランダムに並び替えます。<br/>（データの偏りを防ぐため目標ラベルセレクタの中でシャッフルを行います）</p></li>
+                    </ul>
+                    <p class="disc-input-cb">シャッフル乱数シード値　<label for="shuffle_seed"></label><input class="main-input-normal" type="number" id="shuffle_seed" min="1" max="9999999999" value="" step="1"></p>
+                    <p class="disc-input-cb-sub">シャッフルを再現するためのシード値を入力してください。（空白の場合は完全ランダム）</p>
+                </td>
+            </tr>
+            <tr id="custom-option3-2">
                 <td colspan="2">
-                    <p>検証データ アップロード<br>
+                    <p>テストデータ アップロード<br>
                         <input id="custom_valid_file" type="file" accept="text/csv">
                     </p>
-                    <p class="disc-input">モデル検証時のテストデータ（CSVデータ）をアップロードします。
-                    <p class="disc-input"><b>注意：このデータは学習に使用されません</b></p>
+                    <p class="disc-input">モデル評価時のテストデータ（CSVデータ）をアップロードします。 <br/>注意：このデータは評価にのみ使用されるので、学習には使用されません。</p>
                 </td>
             </tr>
             <tr id="custom-option4">
                 <td colspan="2">
                     <p>学習モデル定義</p>
                     <p class="disc-input">TensorFlow jsの<b>Layers API</b>形式でモデル作成のプログラムを入力してください。（詳細は<a href="https://www.tensorflow.org/js/guide/train_models?hl=ja">TensorFlow jsの公式ドキュメント</a>を参照ください。）</p>
-                    <div id="editor_a" style="min-height: 300px;">const model = tf.sequential();
+                    <div id="editor_a" style="min-height: 300px">const model = tf.sequential();
 model.add(tf.layers.dense({units: 1024, activation: 'relu', inputShape: [18]}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
@@ -319,7 +344,7 @@ return model;</div>
                     <div>
                         <ul class="md-checkbox-ul">
                             <li>
-                                <input type="checkbox" id="sel-1" class="md-checkbox-checkbox" checked>
+                                <input type="checkbox" id="sel-1" class="md-checkbox-checkbox" checked disabled>
                                 <label for="sel-1">技種別（突き・回し蹴り・正蹴り・技なし）</label>
                                 <span class="md-checkbox-ripple"></span>
                             </li>
@@ -341,7 +366,8 @@ return model;</div>
                         </ul>
                     </div>
                     <p class="layer-num" id="output_layer_num">必要な出力ユニット数：4</p>
-                    <p class="disc-input"><b>現在この機能は使用できません。</b></p>
+                    <p class="disc-input"><b>現在この機能は使用できません。（未実装）</b></p>
+                    <!-- この機能をリリースする際はデータシャッフル時のセレクタフィルタリング、ラベル分割関数をすべて考慮に入れること -->
                     <p class="disc-input">学習時にどの目標ラベル（通称：技コード）を残しておくかを設定できます。（複数選択可）</p>
                 </td>
                 <td>
@@ -386,7 +412,6 @@ return model;</div>
                         </li>
                         <li><p class="disc-input-cb">実際に予測は行わず、モデルのみを作成します。（モデルのダウンロードは可能です）</p></li>
                     </ul>
-                    <p class="disc-input">※今後、以下の機能を搭載予定です。<br/>・学習データのテスト自動分割<br/>・データシャッフル</p>
                 </td>
             </tr>
             </tbody>

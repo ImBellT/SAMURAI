@@ -26,7 +26,6 @@ function InitializeEditor() {
         enableBasicAutocompletion: true,
         enableSnippets: true,
         enableLiveAutocompletion: true,
-        fontFamily: "JetBrains Mono",
         fontSize: "14px"
     });
     editor_a.$blockScrolling = Infinity;
@@ -38,7 +37,6 @@ function ChangeCustomOption() {
     function ChangeGroup(custom, my_model) {
         document.getElementById("custom-option1").style.display = custom ? "table-row" : "none";
         document.getElementById("custom-option2").style.display = custom ? "table-row" : "none";
-        document.getElementById("custom-option3").style.display = custom ? "table-row" : "none";
         document.getElementById("custom-option4").style.display = custom ? "table-row" : "none";
         document.getElementById("custom-option5").style.display = custom ? "table-row" : "none";
         document.getElementById("custom-option6").style.display = custom ? "table-row" : "none";
@@ -46,13 +44,13 @@ function ChangeCustomOption() {
         document.getElementById("my-data-option1").style.display = my_model ? "table-row" : "none";
         document.getElementById("my-data-option2").style.display = my_model ? "table-row" : "none";
         document.getElementById("my-data-option3").style.display = my_model ? "table-row" : "none";
+        // カスタムのテストデータを使用する場合は表示
+        document.getElementById("custom-option3-1").style.display = !document.getElementById("custom_valid").checked && custom ? "table-row" : "none";
+        document.getElementById("custom-option3-2").style.display = document.getElementById("custom_valid").checked && custom ? "table-row" : "none";
     }
 
-    if (_poseParam.model.value === "pose_net") {
-        document.getElementById("posenet-option").style.display = "table-row";
-    } else {
-        document.getElementById("posenet-option").style.display = "none";
-    }
+    document.getElementById("posenet-option").style.display = _poseParam.model.value === "pose_net" ? "table-row" : "none";
+
     switch (document.getElementById("dnn_model").value) {
         case "my_model":
             ChangeGroup(false, true);
@@ -226,6 +224,10 @@ _poseParam.model.addEventListener('change', () => {
 });
 // カスタムモデルの場合も同様
 document.getElementById("dnn_model").addEventListener('change', () => {
+    ChangeCustomOption();
+});
+// カスタムも出るか否かのチェック時も発火
+document.getElementById("custom_valid").addEventListener('change', () => {
     ChangeCustomOption();
 });
 // ラベルクリック時に発火（骨格サイド）
