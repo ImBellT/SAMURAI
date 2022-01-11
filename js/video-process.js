@@ -18,9 +18,6 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
     async function ChoiceModel() {
         let model, param, info, data;
         switch (document.getElementById("dnn_model").value) {
-            case "miyabi_v1_5":
-                [model, param] = await LoadModel("model/miyabi_v1.5/model.json");
-                break;
             case "my_model":
                 [model, param] = await LoadModel_Outside(document.getElementById("custom_model_file_json"), document.getElementById("custom_model_file_weight"), document.getElementById("custom_model_file_standard"));
                 break;
@@ -38,6 +35,10 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
                 [model, param, info, data] = await UseCustomModel(DataFile, TestFile, config); // 学習データを使用してモデル作成
                 document.getElementById("save_model").disabled = false; // ダウンロードボタンを有効化（グレーアウトを解除）
                 document.getElementById("save_model").title = "作成したモデルをダウンロードします";
+                break;
+            default:
+                [model, param] = await miyabiSelector(document.getElementById("dnn_model").value);
+                model.summary();
         }
         if (document.getElementById("dnn_model").value === "custom") {
             return [model, param, info, data];

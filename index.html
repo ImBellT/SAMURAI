@@ -237,7 +237,13 @@
                 <td colspan="2">
                     <p><label for="dnn_model">使用モデル</label>
                         <select class="main-input-full" id="dnn_model">
-                            <option value="miyabi_v1_5">MIYABI v1.5モデル（アーキテクチャ：M-FC v1 & S-FC v1.5）</option>
+                            <option value="miyabi_v2_sgd">MIYABI v2 SGDモデル</option>
+                            <option value="miyabi_v2_momentum">MIYABI v2 Momentumモデル</option>
+                            <option value="miyabi_v2_adagrad">MIYABI v2 Adagradモデル</option>
+                            <option value="miyabi_v2_adadelta">MIYABI v2 Adadeltaモデル</option>
+                            <option value="miyabi_v2_adam">MIYABI v2 Adamモデル</option>
+                            <option value="miyabi_v2_adamax">MIYABI v2 Adamaxモデル</option>
+                            <option value="miyabi_v2_rmsprop">MIYABI v2 RMSPropモデル</option>
                             <option value="my_model">独自モデルを読み込み（必要：学習済モデル）</option>
                             <option value="custom">独自学習（必要：学習データ・コーディング）</option>
                         </select>
@@ -330,7 +336,7 @@
                     <p>学習モデル定義</p>
                     <p class="disc-input">TensorFlow jsの<b>Layers API</b>形式でモデル作成のプログラムを入力してください。（詳細は<a href="https://www.tensorflow.org/js/guide/train_models?hl=ja">TensorFlow jsの公式ドキュメント</a>を参照ください。）</p>
                     <div id="editor_a" style="min-height: 300px">const model = tf.sequential();
-model.add(tf.layers.dense({units: 1024, activation: 'relu', inputShape: [18]}));
+model.add(tf.layers.dense({units: 1024, activation: 'relu', inputShape: [14]}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));

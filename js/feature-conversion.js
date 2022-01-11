@@ -121,14 +121,6 @@ function S_FC_V1(points) {
     key[4].name = '右手の伸ばし具合（肩・ひじ・手首が成すラジアン角度）';
     key[5] = CalcDistance(points[15], points[16]);
     key[5].name = '左足と右足の距離';
-    key[6] = CalcDistance(points[11], points[15]);
-    key[6].name = '左足と左臀部までの距離';
-    key[7] = CalcDistance(points[12], points[16]);
-    key[7].name = '右足と右臀部までの距離';
-    key[8] = DifferenceRadian(points[11], points[13], points[15]);
-    key[8].name = '左足の伸ばし具合（臀部・ひざ・足首が成すラジアン角度）';
-    key[9] = DifferenceRadian(points[12], points[14], points[16]);
-    key[9].name = '右足の伸ばし具合（臀部・ひざ・足首が成すラジアン角度）';
     return key;
 }
 

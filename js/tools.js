@@ -242,6 +242,18 @@ async function UseCustomModel(csv_file, csv_file_test, config) {
 }
 
 /**
+ * MIYABIモデルを読み込みます（binファイルとstandard.jsonファイルが同一ディレクトリにいることを必ず確認！）
+ * @param {string} category モデルの種類
+ * @return {object} [Kerasモデル, モデルのパラメータ]
+ */
+async function miyabiSelector(category){
+    const version = Number(category.substr(8,1));
+    const optimizer = category.substr(10);
+    console.log("/model/miyabi_v" + version + "/" + optimizer + "/model.json");
+    return LoadModel("/model/miyabi_v" + version + "/" + optimizer + "/model.json");
+}
+
+/**
  * 学習モデルを読み込みます（binファイルとstandard.jsonファイルが同一ディレクトリにいることを必ず確認！）
  * @param {object} model_file model.jsonのパス（外部も可）
  * @return {object} [Kerasモデル, モデルのパラメータ]
