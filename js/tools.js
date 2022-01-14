@@ -181,14 +181,6 @@ async function UseCustomModel(csv_file, csv_file_test, config) {
 
     const [data, data_test] = config.custom_valid ? [await ProcessCSVData(csv_file), await ProcessCSVData(csv_file_test)] : splitData(await ProcessCSVData(csv_file), config, param.selector);
 
-    // デバッグ用
-    if (config.debug_mode) {
-        console.log("学習データ↓");
-        console.log(data);
-        console.log("テストデータ↓");
-        console.log(data_test);
-    }
-
     const [x_pos, y] = SplitDataIndex(data);
     let x_key = FeatureConvertAll(x_pos, param);
     const [x_pos_test, y_test] = SplitDataIndex(data_test);
@@ -198,6 +190,12 @@ async function UseCustomModel(csv_file, csv_file_test, config) {
 
     // デバッグ用
     if (config.debug_mode) {
+        console.log("学習データ↓");
+        console.log(data);
+        console.log("テストデータ↓");
+        console.log(data_test);
+        console.log("説明変数↓");
+        console.log(x_key);
         console.log("平均値↓");
         console.log(JSON.parse(JSON.stringify(param.mean)));
         console.log("標準偏差↓");

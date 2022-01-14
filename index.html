@@ -238,12 +238,10 @@
                     <p><label for="dnn_model">使用モデル</label>
                         <select class="main-input-full" id="dnn_model">
                             <option value="miyabi_v2_sgd">MIYABI v2 SGDモデル</option>
-                            <option value="miyabi_v2_momentum">MIYABI v2 Momentumモデル</option>
                             <option value="miyabi_v2_adagrad">MIYABI v2 Adagradモデル</option>
                             <option value="miyabi_v2_adadelta">MIYABI v2 Adadeltaモデル</option>
                             <option value="miyabi_v2_adam">MIYABI v2 Adamモデル</option>
                             <option value="miyabi_v2_adamax">MIYABI v2 Adamaxモデル</option>
-                            <option value="miyabi_v2_rmsprop">MIYABI v2 RMSPropモデル</option>
                             <option value="my_model">独自モデルを読み込み（必要：学習済モデル）</option>
                             <option value="custom">独自学習（必要：学習データ・コーディング）</option>
                         </select>
@@ -318,9 +316,14 @@
                             <label for="data_shuffle">抽出前にデータをシャッフルする</label>
                         </li>
                         <li><p class="disc-input-cb">テストデータを抽出する前に学習データの順序をランダムに並び替えます。<br/>（データの偏りを防ぐため目標ラベルセレクタの中でシャッフルを行います）</p></li>
+                        <li><p class="disc-input-cb">シャッフル乱数シード値　<label for="shuffle_seed"></label><input class="main-input-normal" type="number" id="shuffle_seed" min="1" max="9999999999" value="" step="1"></p></li>
+                        <li><p class="disc-input-cb-sub">シャッフルを再現するためのシード値を入力してください。（空白の場合は完全ランダム・1以上9999999999以下）</p></li>
+                        <li>
+                            <input type="checkbox" id="data_shuffle_comp" class="md-checkbox-checkbox" checked>
+                            <label for="data_shuffle_comp">シード数1-20を連続的に学習</label>
+                        </li>
+                        <li><p class="disc-input-cb">シード数1-20にてデータシャッフルをおこない、その20データテーブルを用いて予測を連続的に実行させます。</p></li>
                     </ul>
-                    <p class="disc-input-cb">シャッフル乱数シード値　<label for="shuffle_seed"></label><input class="main-input-normal" type="number" id="shuffle_seed" min="1" max="9999999999" value="" step="1"></p>
-                    <p class="disc-input-cb-sub">シャッフルを再現するためのシード値を入力してください。（空白の場合は完全ランダム）</p>
                 </td>
             </tr>
             <tr id="custom-option3-2">
@@ -341,7 +344,7 @@ model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
 model.add(tf.layers.dense({units: 4, activation: 'softmax'}));
-model.compile({optimizer: tf.train.sgd(0.01), loss: 'categoricalCrossentropy', metrics: ['accuracy']});
+model.compile({optimizer: tf.train.adam(0.001, 0.9, 0.999), loss: 'categoricalCrossentropy', metrics: ['accuracy']});
 return model;</div>
                     <p class="disc-input">注意事項</p>
                     <ul class="disc-input">

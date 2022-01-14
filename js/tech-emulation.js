@@ -96,6 +96,72 @@ function LabelOneHotEncode(label, param) {
 }
 
 /**
+ * モデルを基に骨格座標を説明変数に変換します
+ * （1）SplitDataIndexまたはpose-detectionに基づいたデータ形式が必要
+ * （2）複数学習データの一括処理はこの関数ではなくFeatureConvertAll関数を使用
+ * @param {object} pose 変換する座標データ（（座標xy, 精度）× 節点数 × 骨格数）
+ * @param {object} param モデルのパラメータ
+ * @return {object} 変換後の説明変数（（数値, 変数名, 精度） × 変数数）を両方のパターンで配列出力（1番目が10、2番目が01）
+ */
+function FeatureConvert(pose, param) {
+    if (pose.length === 1) {
+        // 単一フォームの場合
+        let key_S;
+        if (pose[0].keypoints === undefined) { // CSVの直接インポートだとkeypointsを定義していないので飛ばす
+            // FC v1の場合
+            //key_S = S_FC_V1(pose[0]);
+            key_S = undefined; // 一時しのぎ用
+        } else {
+            //key_S = S_FC_V1(pose[0].keypoints);
+            key_S = undefined; // 一時しのぎ用
+        }
+        return key_S;
+    } else {
+        // 対戦形式の場合
+        let key_1;
+        let key_2;
+        if (pose[0].keypoints === undefined) {
+            if (param.FC_model_version === 1) {
+                // FC v1の場合
+                key_1 = M_FC_V1(pose[0], pose[1]).concat(S_FC_V1(pose[0]));
+                key_2 = M_FC_V1(pose[1], pose[0]).concat(S_FC_V1(pose[1]));
+            } else {
+                // v1以外（未設計）
+                key_1 = undefined;
+                key_2 = undefined;
+            }
+        } else {
+            if (param.FC_model_version === 1) {
+                // FC v1の場合
+                key_1 = M_FC_V1(pose[0].keypoints, pose[1].keypoints).concat(S_FC_V1(pose[0].keypoints));
+                key_2 = M_FC_V1(pose[1].keypoints, pose[0].keypoints).concat(S_FC_V1(pose[1].keypoints));
+            } else {
+                // v1以外（未設計）
+                key_1 = undefined;
+                key_2 = undefined;
+            }
+        }
+        return [key_1, key_2];
+    }
+}
+
+/**
+ * 骨格座標を一斉に説明変数に変換します
+ * （1）SplitDataIndexに基づいたデータ形式が必要
+ * （2）単一データの処理はこの関数ではなくFeatureConvert関数を使用
+ * @param {object} pose 変換する座標データ（（座標xy, 精度）× 節点数 × 骨格数 × データ数）※必ず攻撃側を先頭に格納してください
+ * @param {object} param モデルのパラメータ
+ * @return {object} 変換後の説明変数（（数値, 変数名, 精度） × 変数数 × データ数）
+ */
+function FeatureConvertAll(pose, param) {
+    let key = [];
+    for (let i = 0; i < pose.length; i++) {
+        key[i] = FeatureConvert(pose[i], param)[0]; // key_1だけ取り出す
+    }
+    return key;
+}
+
+/**
  * 予測結果に座標の精度を考慮して調整します
  * @param {object} key 特徴量オブジェクト
  * @param {object} result 予測結果（テンソル形式のデータに準拠）
