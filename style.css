@@ -222,7 +222,7 @@ input[type="range"] {
 .disc-input-cb-sub {
     font-size: 12px;
     margin-left: 40px;
-    margin-top: 10px;
+    margin-top: 0;
     color: gray;
 }
 .layer-num {

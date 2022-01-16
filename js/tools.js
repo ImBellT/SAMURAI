@@ -1,8 +1,9 @@
 /**
  * 作成したモデルをダウンロードします
- * @param {object} models UseCustomModelで出力されたモデルデータ
+ * @param {object} model UseCustomModelで出力されたモデルデータ
+ * @param {object} config 設定データ
  */
-async function downloadModel(models) {
+async function downloadModel(config, model) {
 
     // モデルからアーティファクトを作成（configはincludeOptimizerとtrainableOnlyのbool値を記載（なくてもいい））
     async function saveModelArtifacts(models, config) {
@@ -91,46 +92,136 @@ async function downloadModel(models) {
         return [await modelBlob(), await weightBlob()];
     }
 
+    const transpose = a => a[0].map((_, c) => a.map(r => r[c])); // 転置配列を定義
+
     // JSZip定義
     const zip = new JSZip();
 
-    // 圧縮するファイルを定義
-    const artifact = await saveModelArtifacts(models);
-    const [model, weights] = await SaveModelTF(artifact);
-    const std = new Blob([JSON.stringify(models[1], null, '')], {type: 'application\/json'});
-    const info_json = new Blob([JSON.stringify({
-        "validationData": models[2].validationData,
-        "params": models[2].params
-    }, null, '')], {type: 'application\/json'});
-    const data1 = new Blob([JSON.stringify(models[3][0], null, '')], {type: 'application\/json'});
-    const data2 = new Blob([JSON.stringify(models[3][1], null, '')], {type: 'application\/json'});
+    async function generateData(model) {
+        // 圧縮するファイルを定義
+        const [, weights] = await SaveModelTF(await saveModelArtifacts(model));
+        const std = new Blob([JSON.stringify(model[1], null, '')], {type: 'application\/json'});
+        const data_train = new Blob([JSON.stringify(model[3][0], null, '')], {type: 'application\/json'});
+        const data_test = new Blob([JSON.stringify(model[3][1], null, '')], {type: 'application\/json'});
+        return [weights, std, data_train, data_test];
+    }
 
-    const transpose = a => a[0].map((_, c) => a.map(r => r[c]));
-    const info_csv_data = transpose([models[2].epoch, models[2].history.acc, models[2].history.val_acc, models[2].history.loss, models[2].history.val_loss]);
-    let csv_string = "Epoch（学習回数）,Accuracy（精度）,Val accuracy（評価精度）,Loss（損失）,Val loss（評価損失）\r\n";
-    info_csv_data.forEach(d => {
-        csv_string += d.join(","); // 配列ごとの区切りを「,」をつけて一列化
-        csv_string += '\r\n';
-    });
-    let bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-    const info_csv = new Blob([bom, csv_string], {type: "text/csv"}); // 抽出したデータをCSV形式に変換
+    async function generateConfig(model) {
+        const [model_data,] = await SaveModelTF(await saveModelArtifacts(model));
+        const info_json = new Blob([JSON.stringify({
+            "validationData": model[2].validationData,
+            "params": model[2].params
+        }, null, '')], {type: 'application\/json'});
+        return [model_data, info_json];
+    }
 
-    // 定義したファイルをアーカイブに追加
-    zip.file("samurai_custom_model.json", model);
-    zip.file("samurai_custom_model_weights.bin", weights);
-    zip.file("samurai_custom_model_standard.json", std);
-    let analytics = zip.folder("分析用ファイル");
-    analytics.file("モデル仕様.json", info_json);
-    analytics.file("学習精度・損失.csv", info_csv);
-    let l_data = zip.folder("学習に使用したデータ");
-    l_data.file("学習データ.json", data1);
-    l_data.file("テストデータ.json", data2);
+    function generateHistory(models) {
 
+        let model_val_accuracy = [models[0][2].epoch];
+        let model_val_loss = [], model_accuracy = [], model_loss = [];
+        let model_val_accuracy_string = "", model_val_loss_string = "", model_accuracy_string = "",
+            model_loss_string = "";
+        for (let i = 0; i < models.length; i++) {
+            model_val_accuracy_string += ",評価精度" + String(i + 1);
+            model_val_accuracy = model_val_accuracy.concat([models[i][2].history.val_acc]);
+            model_val_loss_string += ",評価損失" + String(i + 1);
+            model_val_loss = model_val_loss.concat([models[i][2].history.val_loss]);
+            model_accuracy_string += ",精度" + String(i + 1);
+            model_accuracy = model_accuracy.concat([models[i][2].history.acc]);
+            model_loss_string += ",損失" + String(i + 1);
+            model_loss = model_loss.concat([models[i][2].history.loss]);
+        }
+        const model_history = transpose(model_val_accuracy.concat(model_val_loss, model_accuracy, model_loss));
+        let csv_string = "学習回数" + model_val_accuracy_string + model_val_loss_string + model_accuracy_string + model_loss_string + "\r\n";
+        model_history.forEach(d => {
+            csv_string += d.join(","); // 配列ごとの区切りを「,」をつけて一列化
+            csv_string += '\r\n';
+        });
+        let bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // BOM付けてExcelの文字化けを防ぐ
+        return new Blob([bom, csv_string], {type: "text/csv"}); // 抽出したデータをCSV形式に変換
+    }
+
+    async function generateCompCSV() {
+        let model_result_all = [];
+        for (let i = comp_model_range[1][0] - 1; i < comp_model_range[1][1]; i += comp_model_range[1][2]) {
+            model_result_all[i] = await calcModelAverage(i);
+        }
+        let model_result_min = [], model_result_full = [];
+        model_result_all.forEach(e => {
+            const tmp = transpose(e);
+            model_result_min = model_result_min.concat(tmp);
+        });
+        //共通項を書き込み
+        for(let i=0; i < model_result_all[0][0].length; i++){
+            model_result_full[i+1] = [];
+            model_result_full[i+1][0] = model_result_all[0][1][i]; // 縦軸のユニット数を定める
+        }
+        model_result_full[0] = []; // 見出し用に初期化
+        for(let i=0; i < model_result_all.length; i++){
+            model_result_full[0][i+1] = model_result_all[i][0][0]; // 横軸の層数を定める
+        }
+        const label = ["評価精度", "評価損失", "精度", "損失"];
+        let model_result_full_all = [[], [], [], []];
+        for (let x = 0; x < label.length; x++) { // 評価項目ごとに実行
+            model_result_full[0][0] = label[x];
+            // 測定データを書き込み
+            for(let i=0; i < model_result_all[0][0].length; i++){
+                for(let j=0; j < model_result_all.length; j++){
+                    model_result_full[i+1][j+1] = model_result_all[j][2+x][i]; // i+1が縦列（ユニット数で見出しを飛ばしている）、jが横列でレイヤー数に準ずる。そこでallの配列に沿う。
+                }
+            }
+            model_result_full_all[x] = JSON.parse(JSON.stringify(model_result_full));
+        }
+
+        let csv_string_min = "層数,ユニット数,評価精度,評価損失,精度,損失\r\n";
+        model_result_min.forEach(d => {
+            csv_string_min += d.join(","); // 配列ごとの区切りを「,」をつけて一列化
+            csv_string_min += '\r\n';
+        });
+        let csv_string_full = [];
+        for(let i=0; i < model_result_full_all.length; i++){
+            csv_string_full[i] = "";
+            model_result_full_all[i].forEach(d => {
+                csv_string_full[i] += d.join(","); // 配列ごとの区切りを「,」をつけて一列化
+                csv_string_full[i] += '\r\n';
+            });
+        }
+        let bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // BOM付けてExcelの文字化けを防ぐ
+        const min = new Blob([bom, csv_string_min], {type: "text/csv"}); // 抽出したデータをCSV形式に変換
+        const full_val_acc = new Blob([bom, csv_string_full[0]], {type: "text/csv"});
+        const full_val_loss = new Blob([bom, csv_string_full[1]], {type: "text/csv"});
+        const full_acc = new Blob([bom, csv_string_full[2]], {type: "text/csv"});
+        const full_loss = new Blob([bom, csv_string_full[3]], {type: "text/csv"});
+        return [min, full_val_acc, full_val_loss, full_acc, full_loss];
+    }
+
+    if (config.comp_model) {
+        // モデル比較用
+        const output = await generateCompCSV();
+        zip.file("データ概要.csv", output[0]);
+        zip.file("評価精度.csv", output[1]);
+        zip.file("評価損失.csv", output[2]);
+        zip.file("精度.csv", output[3]);
+        zip.file("損失.csv", output[4]);
+    } else {
+        // 定義したファイルをアーカイブに追加
+        let part = zip.folder("モデルデータ・学習データ");
+        for (let i = 0; i < model.length; i++) {
+            const [data_train, data_test] = await generateData(model);
+            let x = part.folder(String(i));
+            x.file("学習データ.json", data_train);
+            x.file("テストデータ.json", data_test);
+        }
+        const [model_data, info_json] = await generateConfig(model);
+        zip.file("model.json", model_data);
+        zip.file("モデル仕様.json", info_json);
+        zip.file("学習精度・損失.csv", generateHistory(model));
+    }
     zip.generateAsync({type: "blob"}).then(function (dataBlob) {
         const DownloadUrl = URL.createObjectURL(dataBlob); // BlobデータをURLに変換
         const downloadOpen = document.createElement('a');
         downloadOpen.href = DownloadUrl;
-        downloadOpen.download = "samurai_custom_model"; // ダウンロード時のファイル名を指定
+        downloadOpen.download = "独自学習モデル出力 - SAMURAI"; // ダウンロード時のファイル名を指定
         downloadOpen.click(); // 疑似クリック
         URL.revokeObjectURL(DownloadUrl); // 作成したURLを解放（削除）
     });
@@ -151,18 +242,34 @@ function MakeCustomModel() {
 }
 
 /**
- * 独自モデルを学習させます
+ * デバッグ用のモデル定義
+ */
+function compModel(layer_num, unit_num) {
+    const model = tf.sequential();
+    model.add(tf.layers.dense({units: unit_num, activation: 'relu', inputShape: [16]}));
+    for (let i = 0; i < layer_num; i++) model.add(tf.layers.dense({units: unit_num, activation: 'relu'}));
+    model.add(tf.layers.dense({units: 4, activation: 'softmax'}));
+    model.compile({
+        optimizer: tf.train.adam(0.001, 0.9, 0.999),
+        loss: 'categoricalCrossentropy',
+        metrics: ['accuracy']
+    });
+    return model;
+}
+
+/**
+ * 独自モデルを学習します
  * @param {string} csv_file CSVファイル形式の学習データ（URLでファイルを指定・Input形式の場合createObjectURLで作る）
  * @param {string} csv_file_test CSVファイル形式の評価用テストデータ（URLでファイルを指定・Input形式の場合createObjectURLで作る）
+ * @param {object} num 学習の回数を指定します（HTML表記にのみ影響）
  * @param {object} config 設定データ
+ * @param layers 層数（モデル比較時のみ）
+ * @param units ユニット数（モデル比較時のみ）
  * @return {object} データによって学習済みのモデル
  */
-async function UseCustomModel(csv_file, csv_file_test, config) {
-
-    const wait = ms => new Promise(resolve => setTimeout(() => resolve(), ms)); // ミリ秒でタイムアウトする関数を定義
-
+async function learnModel(csv_file, csv_file_test, num, config, layers = 4, units = 512) {
     _statusText.main.innerHTML = "処理状況：新規モデルの作成・学習を実行します。";
-    const model = MakeCustomModel();
+    const model = config.comp_model ? compModel(layers, units) : MakeCustomModel();
     let param = {
         mean: [],
         std: [],
@@ -190,6 +297,8 @@ async function UseCustomModel(csv_file, csv_file_test, config) {
 
     // デバッグ用
     if (config.debug_mode) {
+        console.log("モデルサマリー↓");
+        model.summary();
         console.log("学習データ↓");
         console.log(data);
         console.log("テストデータ↓");
@@ -207,14 +316,20 @@ async function UseCustomModel(csv_file, csv_file_test, config) {
     const x_tensor = tf.tensor2d(KeyToValue(x_key));
     const y_tensor = tf.tensor2d(LabelOneHotEncode(y, param));
 
-    // デバッグ用
-    if (config.debug_mode) {
-        console.log("モデルサマリー↓");
-        model.summary();
-    }
-
     function onEpochEnd(epoch, logs) {
-        _statusText.main.innerHTML = "処理状況：新規モデルを学習中…<br/>・Epoch " + epoch + "<br/>・学習データ精度（Accuracy）" + logs.acc + "<br/>・学習データ損失（Loss）" + logs.loss + "<br/>・テストデータ精度（Val Accuracy）" + logs.val_acc + "<br/>・テストデータ損失（Val Loss）" + logs.val_loss;
+        switch (num[0]) {
+            case -1: // シャッフルなし
+                _statusText.main.innerHTML = "処理状況：新規モデルを学習中…<br/>・Epoch " + epoch + "<br/>・学習データ精度（Accuracy）" + logs.acc + "<br/>・学習データ損失（Loss）" + logs.loss + "<br/>・テストデータ精度（Val Accuracy）" + logs.val_acc + "<br/>・テストデータ損失（Val Loss）" + logs.val_loss;
+                break;
+            case 0: // シャッフルのみ
+                _statusText.main.innerHTML = "処理状況：新規モデルを学習中…<br/>・シード数：" + config.seed + "（" + (num[1] + 1) + "回目）<br/>・Epoch " + epoch + "<br/>・学習データ精度（Accuracy）" + logs.acc + "<br/>・学習データ損失（Loss）" + logs.loss + "<br/>・テストデータ精度（Val Accuracy）" + logs.val_acc + "<br/>・テストデータ損失（Val Loss）" + logs.val_loss;
+                break;
+            case 1: // シャッフル＆モデル比較
+                _statusText.main.innerHTML = "処理状況：新規モデルを学習中…<br/>・層数：" + (num[1][0] + 1) + "　ユニット数：" + num[1][1] + "<br/>・シード数：" + config.seed + "（" + (num[1][2] + 1) + "回目）<br/>・Epoch " + epoch + "<br/>・学習データ精度（Accuracy）" + logs.acc + "<br/>・学習データ損失（Loss）" + logs.loss + "<br/>・テストデータ精度（Val Accuracy）" + logs.val_acc + "<br/>・テストデータ損失（Val Loss）" + logs.val_loss;
+                break;
+            default:
+                _statusText.main.innerHTML = "学習時にエラーが発生しました。（Error：学習カテゴリの区分不適合）";
+        }
         if (document.getElementById("debug-mode").checked) {
             console.log(String(epoch) + '回目の結果↓');
             console.log(logs);
@@ -234,9 +349,84 @@ async function UseCustomModel(csv_file, csv_file_test, config) {
         console.log(JSON.parse(JSON.stringify(info)));
     }
 
-    _statusText.main.innerHTML = "処理状況：新規モデルの学習が完了しました。ならびにモデルのダウンロードを解除しました。";
-    await wait(1000);
     return [model, param, info, [data, data_test]];
+}
+
+/**
+ * 独自モデルを準備します
+ * @param {string} csv_file CSVファイル形式の学習データ（URLでファイルを指定・Input形式の場合createObjectURLで作る）
+ * @param {string} csv_file_test CSVファイル形式の評価用テストデータ（URLでファイルを指定・Input形式の場合createObjectURLで作る）
+ * @param {object} config 設定データ
+ * @return {object} データによって学習済みのモデル
+ */
+async function UseCustomModel(csv_file, csv_file_test, config) {
+
+    if (isNaN(config.seed)) config.seed = Math.floor(Math.random() * 100);
+
+    if (!config.data_shuffle && !config.data_shuffle_comp) return await learnModel(csv_file, csv_file_test, [-1], config);
+
+    const [learning_mode, layer_num_range, unit_num_range] = (() => {
+        if (config.comp_model) {
+            return comp_model_range; // シャッフル＆モデル比較（始点はどっちも1以上が必要）
+        } else if (!config.custom_valid && config.data_shuffle && config.data_shuffle_comp) {
+            return [0, [1, 1, 1], [1, 1, 1]]; // シャッフルのみ
+        } else {
+            throw new Error("学習方法の設定時にエラーが発生しました。");
+        }
+    })();
+    window.indexedDB.deleteDatabase("samurai_DB_model");
+    let openReq = indexedDB.open("samurai_DB_model", 1);
+    openReq.onupgradeneeded = function (event) {
+        let db = event.target.result; // データベースを定義
+        for (let i = layer_num_range[0]; i <= layer_num_range[1]; i += layer_num_range[2]) {
+            db.createObjectStore("layer" + ('0000' + i).slice(-4), {keyPath: "key"});　// 作成したモデルを格納
+        }
+    }
+
+    const seed_origin = config.seed;
+
+    for (let layer_num = layer_num_range[0] - 1; layer_num < layer_num_range[1]; layer_num += layer_num_range[2]) { // 層数
+        for (let unit_num = unit_num_range[0]; unit_num <= unit_num_range[1]; unit_num += unit_num_range[2]) { // ユニット数
+            let param_tmp = [], info_tmp = [], data_tmp = [];
+            config.seed = seed_origin;
+            for (let seed_num = 0; seed_num < config.shuffle_comp_times; seed_num++) { // シード数
+                [, param_tmp[seed_num], info_tmp[seed_num], data_tmp[seed_num]] = await learnModel(csv_file, csv_file_test, [learning_mode, [layer_num, unit_num, seed_num]], config, layer_num, unit_num);
+                config.seed++;
+            }
+            await insertPoseDB({
+                param: param_tmp,
+                info: info_tmp,
+                data: data_tmp
+            }, "samurai_DB_model", "layer" + ('0000' + (layer_num + 1)).slice(-4), unit_num); // ユニットごとに切り分ける
+        }
+    }
+
+    _statusText.main.innerHTML = "処理状況：新規モデルの学習が完了しました。ならびにモデルのダウンロードを解除しました。";
+    return 0;
+}
+
+/**
+ * 乱数シードによる学習から損失・精度の平均を計算します
+ * @return {object} モデルの平均値・シード数
+ */
+async function calcModelAverage(layer_num) {
+    const resume_data = await resumePoseDB("samurai_DB_model", "layer" + ('0000' + (layer_num + 1)).slice(-4));
+
+    let layers_num = [], units_num = [], model_val_accuracy = [], model_val_loss = [], model_accuracy = [],
+        model_loss = [];
+    const epoch_length = resume_data[0].data.info.length;
+    for (let i = 0; i < resume_data.length; i++) {
+        units_num[i] = resume_data[i].key;
+        layers_num[i] = layer_num + 1;
+        model_val_accuracy[i] = 0, model_val_loss[i] = 0, model_accuracy[i] = 0, model_loss[i] = 0;
+        resume_data[i].data.info.forEach(e => {
+            model_val_accuracy[i] += e.history.val_acc.slice(-1)[0] / epoch_length; // 評価精度の最終結果のみを加算する
+            model_val_loss[i] += e.history.val_loss.slice(-1)[0] / epoch_length;
+            model_accuracy[i] += e.history.acc.slice(-1)[0] / epoch_length;
+            model_loss[i] += e.history.loss.slice(-1)[0] / epoch_length;
+        });
+    }
+    return [layers_num, units_num, model_val_accuracy, model_val_loss, model_accuracy, model_loss]; // 各結果の平均値（[ユニットごとの評価精度平均（指定シード数から導出）]）
 }
 
 /**
@@ -244,8 +434,8 @@ async function UseCustomModel(csv_file, csv_file_test, config) {
  * @param {string} category モデルの種類
  * @return {object} [Kerasモデル, モデルのパラメータ]
  */
-async function miyabiSelector(category){
-    const version = Number(category.substr(8,1));
+async function miyabiSelector(category) {
+    const version = Number(category.substr(8, 1));
     const optimizer = category.substr(10);
     console.log("/model/miyabi_v" + version + "/" + optimizer + "/model.json");
     return LoadModel("/model/miyabi_v" + version + "/" + optimizer + "/model.json");
@@ -367,7 +557,7 @@ function splitData(data, config, selector) {
         data.forEach(e => {
             const cat = selector_str[0].indexOf(Number(e.label.charAt(0)));
             tmp[cat] = tmp[cat].concat(e)
-        }); // 技種別コード-1の配列に突っ込む
+        }); // 技種別コードの配列に突っ込む
     } else {
         // 後で頑張れ for 未来の自分
     }
@@ -386,7 +576,7 @@ function splitData(data, config, selector) {
  */
 function shuffleMatrix(matrix, seed) {
 
-    if (isNaN(seed)) seed = Math.floor(Math.random() * 9);
+    seed *= 135485; // 適当にシード値を増やしておく
 
     // 乱数シードリストを定義
     let seed_list = [123456789, 362436069, 521288629, seed];

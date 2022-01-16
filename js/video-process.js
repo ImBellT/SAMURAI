@@ -25,14 +25,16 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
                 const DataFile = URL.createObjectURL(document.getElementById("custom_data_file").files[0]); // 学習データを変数化
                 const TestFile = document.getElementById("custom_valid_file").files[0] === null ? URL.createObjectURL(document.getElementById("custom_valid_file").files[0]) : null;
                 document.getElementById("shuffle_seed").value = parseInt(document.getElementById("shuffle_seed").value, 10); // 小数点とかはすべて除去
-                const config = {
+                [model, param, info, data] = await UseCustomModel(DataFile, TestFile, {
                     debug_mode: document.getElementById("debug-mode").checked,
                     custom_valid: document.getElementById("custom_valid").checked,
                     data_shuffle: document.getElementById("data_shuffle").checked,
+                    data_shuffle_comp: document.getElementById("data_shuffle_comp").checked,
+                    shuffle_comp_times: parseFloat(document.getElementById("shuffle_comp_times").value),
                     test_ratio: parseFloat(document.getElementById("valid_ratio").value),
-                    seed: parseInt(document.getElementById("shuffle_seed").value, 10)
-                };
-                [model, param, info, data] = await UseCustomModel(DataFile, TestFile, config); // 学習データを使用してモデル作成
+                    seed: parseInt(document.getElementById("shuffle_seed").value, 10),
+                    comp_model: document.getElementById("comp_model").checked
+                }); // 学習データを使用してモデル作成
                 document.getElementById("save_model").disabled = false; // ダウンロードボタンを有効化（グレーアウトを解除）
                 document.getElementById("save_model").title = "作成したモデルをダウンロードします";
                 break;
@@ -100,7 +102,6 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
     }
 
     const wait = ms => new Promise(resolve => setTimeout(() => resolve(), ms)); // ミリ秒でタイムアウトする関数を定義
-    makeDB("samurai_db"); // 骨格と結果を格納するIndexedDBを作成
     let graph = await graphInitialize('chart_div');
     const netModel = await CreatePoseModel(inputVideo, poseParam); // 骨格モデル定義（選択肢ごとに定義）
     const scale = AdjustCanvasToCtx(inputVideo, canvas, poseParam); // キャンバス設定
@@ -122,8 +123,8 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
             await EstimatePose(); // 骨格予想
             TechEmulation(); // 技予想
             drawIt();
-            insertPoseDB(position, "samurai_db", "pose_store", time_num);
-            insertPoseDB(result, "samurai_db", "result_store", time_num);
+            insertPoseDB(position, "samurai_DB", "pose_store", time_num);
+            insertPoseDB(result, "samurai_DB", "result_store", time_num);
             time_num++;
             inputVideo.currentTime += parseFloat(poseParam.flame_stride.value) / 1000; // 動画を設定値の秒数分進める
             percentage = Math.floor((inputVideo.currentTime / inputVideo.duration) * 10000) / 100

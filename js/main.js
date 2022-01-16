@@ -1,5 +1,6 @@
 // 姿勢推定を実行
 async function runVideoPoseSimulation() {
+    makeDB(); // いろいろと格納するためのIndexedDBを作成
     if (_inputVideo.getAttribute("src") === ""
         && (document.getElementById("dnn_model").value !== "custom"
                 || (document.getElementById("dnn_model").value === "custom"
@@ -21,30 +22,37 @@ async function runVideoPoseSimulation() {
     if (document.getElementById("dnn_model").value === "custom" && document.getElementById("model_only").checked) {
         ChangeInputAvailability(true);
         // モデル学習のみ
-        const DataFile = URL.createObjectURL(document.getElementById("custom_data_file").files[0]); // 学習データを変数化
-        const TestFile = document.getElementById("custom_valid_file").files[0] === null ? URL.createObjectURL(document.getElementById("custom_valid_file").files[0]) : null;
-        document.getElementById("shuffle_seed").value = parseInt(document.getElementById("shuffle_seed").value, 10); // 小数点とかはすべて除去
-        const config = {
-            debug_mode: document.getElementById("debug-mode").checked,
-            custom_valid: document.getElementById("custom_valid").checked,
-            data_shuffle: document.getElementById("data_shuffle").checked,
-            test_ratio: parseFloat(document.getElementById("valid_ratio").value),
-            seed: parseInt(document.getElementById("shuffle_seed").value, 10)
-        };
-        model_data = await UseCustomModel(DataFile, TestFile, config); // 学習データを使用してモデル作成
+        await learnModelOnly();
         document.getElementById("save_model").disabled = false; // ダウンロードボタンを有効化（グレーアウトを解除）
         document.getElementById("save_model").title = "作成したモデルをダウンロードします";
         ChangeInputAvailability(false);
     } else {
         // 全部やる
+        ChangeInputAvailability(true);
         await RunSimulation(_Canvas, _Ctx, _inputVideo, _poseParam); // 姿勢推定
         ResetPreviewVision();
-        ChangeInputAvailability(true);
         document.getElementById("save_result").disabled = false; // ダウンロードボタンを有効化（グレーアウトを解除）
         document.getElementById("save_result").title = "予測した技確率をCSV形式でダウンロードします";
         ChangeInputAvailability(false);
     }
 
+}
+
+// モデル学習のみ実行
+async function learnModelOnly(){
+    const DataFile = URL.createObjectURL(document.getElementById("custom_data_file").files[0]); // 学習データを変数化
+    const TestFile = document.getElementById("custom_valid_file").files[0] === null ? URL.createObjectURL(document.getElementById("custom_valid_file").files[0]) : null;
+    document.getElementById("shuffle_seed").value = parseInt(document.getElementById("shuffle_seed").value, 10); // 小数点とかはすべて除去
+    model_data = await UseCustomModel(DataFile, TestFile, {
+        debug_mode: document.getElementById("debug-mode").checked, // デバッグモード
+        custom_valid: document.getElementById("custom_valid").checked, // カスタムテストデータを使用
+        data_shuffle: document.getElementById("data_shuffle").checked, // 学習データをシャッフル
+        data_shuffle_comp: document.getElementById("data_shuffle_comp").checked, // 連続シャッフル検証
+        shuffle_comp_times: parseFloat(document.getElementById("shuffle_comp_times").value), // シャッフル回数（data_shuffle_comp有効時のみ適用）
+        test_ratio: parseFloat(document.getElementById("valid_ratio").value), // テストデータ切り分け比率
+        seed: parseInt(document.getElementById("shuffle_seed").value, 10), // シャッフルシード
+        comp_model: document.getElementById("comp_model").checked // モデル比較（開発者専用）
+    }); // 学習データを使用してモデル作成
 }
 
 // CSV形式でダウンロード
@@ -77,10 +85,39 @@ document.getElementById("save_result").addEventListener('click', () => {
     resumePoseDB("samurai_db", "result_store").then(e => downloadResult(e, "result.csv"));
 });
 document.getElementById("save_model").addEventListener('click', () => {
-    downloadModel(model_data).then();
+    downloadModel({
+        use_indexeddb: true, // indexeddbを読み込む際はモデルは出力しない
+        shuffle_comp_times: parseFloat(document.getElementById("shuffle_comp_times").value),
+        comp_model: document.getElementById("comp_model").checked
+    }, model_data).then();
 });
 
 // 処理実行ボタン押し時に発火
 document.getElementById("send_data").addEventListener('click', () => {
     runVideoPoseSimulation().then();
 });
+
+// デバッグ用
+document.getElementById("debug_do").addEventListener('click', () => {
+    ChangeInputAvailability(true);
+    const DataFile = "/data/learning_data_ss1500.csv"; // 学習データを変数化
+    const TestFile = null;
+    document.getElementById("shuffle_seed").value = parseInt(document.getElementById("shuffle_seed").value, 10); // 小数点とかはすべて除去
+    UseCustomModel(DataFile, TestFile, {
+        debug_mode: false, // デバッグモード
+        custom_valid: false, // カスタムテストデータを使用
+        data_shuffle: true, // 学習データをシャッフル
+        data_shuffle_comp: true, // 連続シャッフル検証
+        shuffle_comp_times: 1, // シャッフル回数（data_shuffle_comp有効時のみ適用）
+        test_ratio: 0.2, // テストデータ切り分け比率
+        seed: 100, // シャッフルシード
+        comp_model: true // モデル比較（開発者専用）
+    }).then(() => {
+        downloadModel({
+            use_indexeddb: true, // indexeddbを読み込む際はモデルは出力しない
+            shuffle_comp_times: 1,
+            comp_model: true
+        }, model_data).then();
+        ChangeInputAvailability(false);
+    }); // 学習データを使用してモデル作成
+})

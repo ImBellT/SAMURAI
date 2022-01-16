@@ -100,6 +100,7 @@
             <button class="btn btn-main" id="send_data" title="技の予測を開始します">処理実行</button>
             <button class="btn btn-main" id="save_result" title="予測結果のダウンロードは推定終了後に行えます" disabled>予測結果DL</button>
             <button class="btn btn-main" id="save_model" title="モデルのダウンロードは独自学習時のみ可能です" disabled>モデルDL</button>
+            <button class="btn btn-main" id="debug_do" title="開発者専用コマンドです">デバッグモード</button>
         </div>
         <table class="input-box">
             <thead>
@@ -283,7 +284,7 @@
                             <option value="custom" disabled>独自（要コーディング）※近日公開</option>
                         </select>
                     </p>
-                    <p class="layer-num">必要な入力ユニット数：8</p>
+                    <p class="layer-num">必要な入力ユニット数：16</p>
                     <p class="disc-input">学習データの座標を説明変数に変換するための変換アーキテクチャを選択します。</p>
                 </td>
             </tr>
@@ -316,13 +317,15 @@
                             <label for="data_shuffle">抽出前にデータをシャッフルする</label>
                         </li>
                         <li><p class="disc-input-cb">テストデータを抽出する前に学習データの順序をランダムに並び替えます。<br/>（データの偏りを防ぐため目標ラベルセレクタの中でシャッフルを行います）</p></li>
-                        <li><p class="disc-input-cb">シャッフル乱数シード値　<label for="shuffle_seed"></label><input class="main-input-normal" type="number" id="shuffle_seed" min="1" max="9999999999" value="" step="1"></p></li>
-                        <li><p class="disc-input-cb-sub">シャッフルを再現するためのシード値を入力してください。（空白の場合は完全ランダム・1以上9999999999以下）</p></li>
-                        <li>
+                        <li><p class="disc-input-cb">シャッフル乱数シード値　<label for="shuffle_seed"></label><input class="main-input-normal" type="number" id="shuffle_seed" min="1" max="9999999999" value="100" step="1"></p></li>
+                        <li><p class="disc-input-cb-sub">シャッフルを再現するためのシード値を入力してください。（空白の場合は完全ランダム・シード値はCSVファイルに保管されます）</p></li>
+                        <li id="data_shuffle_comp_visible1">
                             <input type="checkbox" id="data_shuffle_comp" class="md-checkbox-checkbox" checked>
-                            <label for="data_shuffle_comp">シード数1-20を連続的に学習</label>
+                            <label for="data_shuffle_comp">シード連続学習</label>
                         </li>
-                        <li><p class="disc-input-cb">シード数1-20にてデータシャッフルをおこない、その20データテーブルを用いて予測を連続的に実行させます。</p></li>
+                        <li id="data_shuffle_comp_visible2"><p class="disc-input-cb">データシャッフル＆モデル学習を設定回数分だけ連続的に実行します。<br/>（回数は20以下推奨）</p></li>
+                        <li id="data_shuffle_comp_visible3"><p class="disc-input-cb">シャッフル回数　<label for="shuffle_comp_times"></label><input class="main-input-normal" type="number" id="shuffle_comp_times" min="1" max="9999999999" value="5" step="1"></p></li>
+                        <li id="data_shuffle_comp_visible4"><p class="disc-input-cb-sub">シャッフル＆学習をおこなう回数を入力してください。（Epoch数ではありません）</p></li>
                     </ul>
                 </td>
             </tr>
@@ -339,7 +342,7 @@
                     <p>学習モデル定義</p>
                     <p class="disc-input">TensorFlow jsの<b>Layers API</b>形式でモデル作成のプログラムを入力してください。（詳細は<a href="https://www.tensorflow.org/js/guide/train_models?hl=ja">TensorFlow jsの公式ドキュメント</a>を参照ください。）</p>
                     <div id="editor_a" style="min-height: 300px">const model = tf.sequential();
-model.add(tf.layers.dense({units: 1024, activation: 'relu', inputShape: [14]}));
+model.add(tf.layers.dense({units: 1024, activation: 'relu', inputShape: [16]}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
 model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
@@ -428,6 +431,12 @@ return model;</div>
                             <span class="md-checkbox-ripple"></span>
                         </li>
                         <li><p class="disc-input-cb">実際に予測は行わず、モデルのみを作成します。（モデルのダウンロードは可能です）</p></li>
+                        <li>
+                            <input type="checkbox" id="comp_model" class="md-checkbox-checkbox" checked>
+                            <label for="comp_model">層数・ユニット数によるモデル比較をおこなう ※開発者専用</label>
+                            <span class="md-checkbox-ripple"></span>
+                        </li>
+                        <li><p class="disc-input-cb">層数・ユニット数を変化させながらモデルを学習させます。（デバッグモデルを使用するためモデル定義のコードはすべて無視されます。また検証ステップ・範囲はtools.jsで定義しています。）</p></li>
                     </ul>
                 </td>
             </tr>
@@ -437,7 +446,7 @@ return model;</div>
             <h3>注意事項</h3>
             <ul>
                 <li style="margin-bottom: 20px;"><p>入力フォームに対する規則チェック機能は現時点では未実装のため、全角数字などを入力するとサイトがフリーズする可能性があります。くれぐれもご注意ください。</p></li>
-                <li><p>本システムはGPU（WebGL）を使用しています。使用はなるべくグラフィックスに特化したハードウェアを使用してください。</p></li>
+                <li><p>本システムはGPU（WebGL）を使用しています。本システムを利用する際はなるべくグラフィックスに特化したハードウェアを使用してください。</p></li>
                 <li><p>PCの性能を最大限発揮するため、<!--suppress HtmlUnknownTarget -->
                     <a href="ms-settings:display-advancedgraphics">こちら</a>をクリックして使用ブラウザのオプションを『高パフォーマンス』に設定してください。<br/>（macOSの場合は<a href="https://support.apple.com/ja-jp/HT202043">こちら</a>を参考にGPUの自動切り替えを無効化してください。）</p></li>
                 <li><p>本システムは1フレームごとに予測情報などをIndexedDB内に格納しております。（長時間の予測を行うと容量不足によるクエリエラーが発生する可能性があります。）</p></li>

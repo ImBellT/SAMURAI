@@ -119,40 +119,38 @@ function ResetAllCanvas(ctx, canvas, video) {
 
 /**
  * 推定情報を格納するためのIndexDBを作成します
- * @param {string} DB_name IndexDBの名前
  */
-function makeDB(DB_name){
-
-    window.indexedDB.deleteDatabase(DB_name);
-    let openReq  = indexedDB.open(DB_name, 1); // 注意：バージョン番号は小数点NG
+function makeDB(){
+    window.indexedDB.deleteDatabase("samurai_DB");
+    let openReq  = indexedDB.open("samurai_DB", 1); // 注意：バージョン番号は小数点NG
 
     // オブジェクトストアの作成・削除はDBの更新時しかできないので、バージョンを指定して更新
     openReq.onupgradeneeded = function(event){
         let db = event.target.result; // データベースを定義
-        db.createObjectStore("pose_store", {keyPath : "time_stamp"});　// time_stamp変数をキーとしてオブジェクトストアを作成
-        db.createObjectStore("result_store", {keyPath : "time_stamp"});　// 同様に予測結果のストアを記録
+        db.createObjectStore("pose_store", {keyPath : "key"});　// time_stamp変数をキーとしてオブジェクトストアを作成
+        db.createObjectStore("result_store", {keyPath : "key"});　// 同様に予測結果のストアを記録
     }
 }
 
 /**
- * 骨格推定座標・予測結果をIndexDBに格納します
+ * 骨格推定座標・予測結果・学習モデルをIndexDBに格納します
  * @param {object} insert_data 推定情報（複数可）
  * @param {string} DB_name IndexDBの名前
  * @param {string} storeName オブジェクトストアの名前
  * @param {int} keyNumber キー番号
  */
-function insertPoseDB(insert_data, DB_name, storeName, keyNumber){
+async function insertPoseDB(insert_data, DB_name, storeName, keyNumber){
+    new Promise(() => {
+        const data = {key: keyNumber, data: insert_data};
+        let openReq  = indexedDB.open(DB_name, 1);
 
-    const data = {time_stamp: keyNumber, data: insert_data};
-
-    let openReq  = indexedDB.open(DB_name, 1);
-
-    openReq.onsuccess = function(event){
-        const db = event.target.result;
-        const trans = db.transaction(storeName, 'readwrite');
-        const store = trans.objectStore(storeName);
-        store.put(data);
-    }
+        openReq.onsuccess = function(event){
+            const db = event.target.result;
+            const trans = db.transaction(storeName, 'readwrite');
+            const store = trans.objectStore(storeName);
+            store.put(data);
+        }
+    });
 }
 
 /**

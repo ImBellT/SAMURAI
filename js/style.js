@@ -131,6 +131,14 @@ document.getElementById("sel-4").addEventListener('change', () => {
     CheckOutputSelector();
 });
 
+// ランダムチェックを入れると1-20シャッフル選択肢を有効化
+document.getElementById("data_shuffle").addEventListener('change', () => {
+    document.getElementById("data_shuffle_comp_visible1").style.display = document.getElementById("data_shuffle").checked ? "block" : "none";
+    document.getElementById("data_shuffle_comp_visible2").style.display = document.getElementById("data_shuffle").checked ? "block" : "none";
+    document.getElementById("data_shuffle_comp_visible3").style.display = document.getElementById("data_shuffle").checked ? "block" : "none";
+    document.getElementById("data_shuffle_comp_visible4").style.display = document.getElementById("data_shuffle").checked ? "block" : "none";
+});
+
 /**
  * グラフ領域内にGoogle Chartを用いて線グラフを描画します。
  * @param {string} chart_div 描画を行うdivタグid
