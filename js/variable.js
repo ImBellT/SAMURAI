@@ -36,6 +36,3 @@ let _poseParam = {
 // スタイル関連
 let _Switch = [false, false];
 let editor_a = ace.edit("editor_a");
-
-// 解決し次第即刻消す！！
-const comp_model_range = [1, [1, 2, 1], [10, 30, 10]]; // 学習モード、層数、ユニット数を定義

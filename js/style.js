@@ -1,3 +1,47 @@
+/**
+ * グラフ領域内にGoogle Chartを用いて線グラフを描画します。
+ * @param {string} chart_div 描画を行うdivタグid
+ * @return {object} [描画用chart, 処理データ, オプション]
+ */
+async function graphInitialize(chart_div) {
+    await google.charts.load('current', {packages: ['corechart', 'line']});
+    const data = new google.visualization.DataTable();
+    data.addColumn('number', '経過フレーム');
+    data.addColumn('number', '突き');
+    data.addColumn('number', '回し蹴り');
+    data.addColumn('number', '正蹴り');
+
+    const options = {
+        chartArea: {width: '70%'},
+        legend: {position: 'bottom'},
+        curveType: 'function',
+        vAxis: {
+            viewWindowMode: 'explicit',
+            viewWindow: {
+                max: 1,
+                min: 0
+            }
+        }
+    };
+
+    const chart = new google.visualization.LineChart(document.getElementById(chart_div));
+    return [chart, data, options];
+}
+
+/**
+ * グラフデータに新しいデータを追加します。
+ * @param graph_var graphInitializeで取得した変数
+ * @param add_data 追加するデータ
+ * @param val 追加するx軸
+ */
+function addGraphData(graph_var, add_data, val) {
+    let re = [val];
+    re = re.concat(add_data)
+    re.pop();
+    graph_var[1].addRows([re]);
+    graph_var[0].draw(graph_var[1], graph_var[2]);
+}
+
 // 初期状態を定義
 function ResetStyle() {
     if (_Switch[0]) {
@@ -15,6 +59,7 @@ function ResetStyle() {
         document.getElementById("dnn-option").style.display = "none";
     }
     ChangeCustomOption();
+    ChangeShuffleOption();
     InitializeEditor();
 }
 
@@ -47,6 +92,8 @@ function ChangeCustomOption() {
         // カスタムのテストデータを使用する場合は表示
         document.getElementById("custom-option3-1").style.display = !document.getElementById("custom_valid").checked && custom ? "table-row" : "none";
         document.getElementById("custom-option3-2").style.display = document.getElementById("custom_valid").checked && custom ? "table-row" : "none";
+        // 注意事項を表示
+        document.getElementById("custom_caution").style.display = custom ? "block" : "none";
     }
 
     document.getElementById("posenet-option").style.display = _poseParam.model.value === "pose_net" ? "table-row" : "none";
@@ -61,6 +108,13 @@ function ChangeCustomOption() {
         default:
             ChangeGroup(false, false);
     }
+}
+
+// 設定変更時に表示非表示を切り替える
+function ChangeShuffleOption() {
+    document.getElementById("data_shuffle_comp_visible").style.display = document.getElementById("data_shuffle").checked ? "grid" : "none";
+    document.getElementById("data_shuffle_comp_count_visible").style.display = document.getElementById("data_shuffle_comp").checked ? "grid" : "none";
+    document.getElementById("model_comp_visible").style.display = document.getElementById("comp_model").checked ? "grid" : "none";
 }
 
 // プレビュー画面を初期化
@@ -118,83 +172,29 @@ function CheckOutputSelector() {
     document.getElementById("output_layer_num").innerText = "必要な出力層数：" + String(OutputLayers);
 }
 
-document.getElementById("sel-1").addEventListener('change', () => {
-    CheckOutputSelector();
-});
-document.getElementById("sel-2").addEventListener('change', () => {
-    CheckOutputSelector();
-});
-document.getElementById("sel-3").addEventListener('change', () => {
-    CheckOutputSelector();
-});
-document.getElementById("sel-4").addEventListener('change', () => {
-    CheckOutputSelector();
-});
+// セレクタ変更時のイベントリスナーを定義
+document.getElementById("sel-1").addEventListener('change', () => CheckOutputSelector());
+document.getElementById("sel-2").addEventListener('change', () => CheckOutputSelector());
+document.getElementById("sel-3").addEventListener('change', () => CheckOutputSelector());
+document.getElementById("sel-4").addEventListener('change', () => CheckOutputSelector());
 
-// ランダムチェックを入れると1-20シャッフル選択肢を有効化
-document.getElementById("data_shuffle").addEventListener('change', () => {
-    document.getElementById("data_shuffle_comp_visible1").style.display = document.getElementById("data_shuffle").checked ? "block" : "none";
-    document.getElementById("data_shuffle_comp_visible2").style.display = document.getElementById("data_shuffle").checked ? "block" : "none";
-    document.getElementById("data_shuffle_comp_visible3").style.display = document.getElementById("data_shuffle").checked ? "block" : "none";
-    document.getElementById("data_shuffle_comp_visible4").style.display = document.getElementById("data_shuffle").checked ? "block" : "none";
-});
-
-/**
- * グラフ領域内にGoogle Chartを用いて線グラフを描画します。
- * @param {string} chart_div 描画を行うdivタグid
- * @return {object} [描画用chart, 処理データ, オプション]
- */
-async function graphInitialize(chart_div) {
-    await google.charts.load('current', {packages: ['corechart', 'line']});
-    const data = new google.visualization.DataTable();
-    data.addColumn('number', '経過フレーム');
-    data.addColumn('number', '突き');
-    data.addColumn('number', '回し蹴り');
-    data.addColumn('number', '正蹴り');
-
-    const options = {
-        chartArea: {width: '70%'},
-        legend: {position: 'bottom'},
-        curveType: 'function',
-        vAxis: {
-            viewWindowMode: 'explicit',
-            viewWindow: {
-                max: 1,
-                min: 0
-            }
-        }
-    };
-
-    const chart = new google.visualization.LineChart(document.getElementById(chart_div));
-    return [chart, data, options];
-}
-
-/**
- * グラフデータに新しいデータを追加します。
- * @param graph_var graphInitializeで取得した変数
- * @param add_data 追加するデータ
- * @param val 追加するx軸
- */
-function addGraphData(graph_var, add_data, val) {
-    let re = [val];
-    re = re.concat(add_data)
-    re.pop();
-    graph_var[1].addRows([re]);
-    graph_var[0].draw(graph_var[1], graph_var[2]);
-}
+// ランダムチェックを入れるとシード連続学習の選択肢を有効化
+document.getElementById("data_shuffle").addEventListener('change', () => ChangeShuffleOption());
+document.getElementById("data_shuffle_comp").addEventListener('change', () => ChangeShuffleOption());
+document.getElementById("comp_model").addEventListener('change', () => ChangeShuffleOption());
 
 /* ドラッグ&ドロップ処理エリア */
-// ファイルドラッグ時に発火（ドロップ前まで動作）
+// ファイルドラッグ
 document.getElementById("vid-upload-area").addEventListener('dragover', (e) => {
     e.preventDefault();
     document.getElementById("vid-upload-area").classList.add('dragover');
 });
-// ドラッグアウト時に発火
+// ドラッグアウト
 document.getElementById("vid-upload-area").addEventListener('dragleave', (e) => {
     e.preventDefault();
     document.getElementById("vid-upload-area").classList.remove('dragover');
 });
-// ドロップ時に発火
+// ドロップ
 document.getElementById("vid-upload-area").addEventListener('drop', (e) => {
     e.preventDefault();
     document.getElementById("vid-upload-area").classList.remove('dragover');
@@ -216,28 +216,20 @@ document.getElementById("vid-upload-area").addEventListener('drop', (e) => {
     }
 
 });
-// 動画ファイル選択時に発火
+// 動画ファイル選択
 vid_file.addEventListener('change', () => {
     previewVidData();
 });
-// カスタムアップロードボタンで発火
+// カスタムアップロードボタン
 document.getElementById("upload-btn").addEventListener('click', () => {
     vid_file.click();
 });
 
 /* 設定項目関連 */
 // PoseNetを選択したか否かで表示を変化させる
-_poseParam.model.addEventListener('change', () => {
-    ChangeCustomOption();
-});
-// カスタムモデルの場合も同様
-document.getElementById("dnn_model").addEventListener('change', () => {
-    ChangeCustomOption();
-});
-// カスタムも出るか否かのチェック時も発火
-document.getElementById("custom_valid").addEventListener('change', () => {
-    ChangeCustomOption();
-});
+_poseParam.model.addEventListener('change', () => ChangeCustomOption());
+document.getElementById("dnn_model").addEventListener('change', () => ChangeCustomOption());
+document.getElementById("custom_valid").addEventListener('change', () => ChangeCustomOption());
 // ラベルクリック時に発火（骨格サイド）
 document.getElementById("bone-option-label").addEventListener('click', function () {
     if (_Switch[0]) {

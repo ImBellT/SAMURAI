@@ -41,7 +41,7 @@ async function runVideoPoseSimulation() {
 // モデル学習のみ実行
 async function learnModelOnly(){
     const DataFile = URL.createObjectURL(document.getElementById("custom_data_file").files[0]); // 学習データを変数化
-    const TestFile = document.getElementById("custom_valid_file").files[0] === null ? URL.createObjectURL(document.getElementById("custom_valid_file").files[0]) : null;
+    const TestFile = document.getElementById("custom_valid").checked ? URL.createObjectURL(document.getElementById("custom_valid_file").files[0]) : null;
     document.getElementById("shuffle_seed").value = parseInt(document.getElementById("shuffle_seed").value, 10); // 小数点とかはすべて除去
     model_data = await UseCustomModel(DataFile, TestFile, {
         debug_mode: document.getElementById("debug-mode").checked, // デバッグモード
@@ -82,7 +82,7 @@ window.addEventListener('load', async () => {
     ResetPreviewVision(); // プレビュー画面を初期化
 });
 document.getElementById("save_result").addEventListener('click', () => {
-    resumePoseDB("samurai_db", "result_store").then(e => downloadResult(e, "result.csv"));
+    resumePoseDB("samurai_DB", "result_store").then(e => downloadResult(e, "result.csv"));
 });
 document.getElementById("save_model").addEventListener('click', () => {
     downloadModel({
@@ -94,30 +94,5 @@ document.getElementById("save_model").addEventListener('click', () => {
 
 // 処理実行ボタン押し時に発火
 document.getElementById("send_data").addEventListener('click', () => {
-    runVideoPoseSimulation().then();
+    runVideoPoseSimulation().then(() => console.log(model_data));
 });
-
-// デバッグ用
-document.getElementById("debug_do").addEventListener('click', () => {
-    ChangeInputAvailability(true);
-    const DataFile = "/data/learning_data_ss1500.csv"; // 学習データを変数化
-    const TestFile = null;
-    document.getElementById("shuffle_seed").value = parseInt(document.getElementById("shuffle_seed").value, 10); // 小数点とかはすべて除去
-    UseCustomModel(DataFile, TestFile, {
-        debug_mode: false, // デバッグモード
-        custom_valid: false, // カスタムテストデータを使用
-        data_shuffle: true, // 学習データをシャッフル
-        data_shuffle_comp: true, // 連続シャッフル検証
-        shuffle_comp_times: 1, // シャッフル回数（data_shuffle_comp有効時のみ適用）
-        test_ratio: 0.2, // テストデータ切り分け比率
-        seed: 100, // シャッフルシード
-        comp_model: true // モデル比較（開発者専用）
-    }).then(() => {
-        downloadModel({
-            use_indexeddb: true, // indexeddbを読み込む際はモデルは出力しない
-            shuffle_comp_times: 1,
-            comp_model: true
-        }, model_data).then();
-        ChangeInputAvailability(false);
-    }); // 学習データを使用してモデル作成
-})

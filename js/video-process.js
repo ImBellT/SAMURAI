@@ -96,7 +96,7 @@ async function RunSimulation(canvas, ctx, inputVideo, poseParam) {
     function drawIt() {
         if (position.length > 0) {
             position = AdjustPoseIndex(position);
-            drawPoses(position, ctx, poseParam, scale); // 結果から描画を実行
+            drawPoses(position, ctx, poseParam, 0.5); // 結果から描画を実行
             PrintParam_Origin(position, _statusText); // 結果をリアルタイムで出力
         }
     }

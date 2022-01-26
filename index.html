@@ -27,7 +27,8 @@
 <body>
 <div style="padding: 10px">
     <h1>空手技判別システム『SAMURAI』</h1>
-    <p><a href="https://github.com/ImBellT/samurai">更新履歴 (GitHub)</a> | <a href="https://github.com/ImBellT/samurai/wiki">Wiki (マニュアル・仕様)</a></p>
+    <p><a href="https://github.com/ImBellT/samurai">更新履歴 (GitHub)</a> | <a
+            href="https://github.com/ImBellT/samurai/wiki">Wiki (マニュアル・仕様)</a></p>
 </div>
 <div class="parent">
     <div class="child1">
@@ -100,7 +101,6 @@
             <button class="btn btn-main" id="send_data" title="技の予測を開始します">処理実行</button>
             <button class="btn btn-main" id="save_result" title="予測結果のダウンロードは推定終了後に行えます" disabled>予測結果DL</button>
             <button class="btn btn-main" id="save_model" title="モデルのダウンロードは独自学習時のみ可能です" disabled>モデルDL</button>
-            <button class="btn btn-main" id="debug_do" title="開発者専用コマンドです">デバッグモード</button>
         </div>
         <table class="input-box">
             <thead>
@@ -170,7 +170,9 @@
             <tr>
                 <td colspan="2">
                     <p><label for="input_res">入力映像の予測範囲時間</label><br/>
-                        <input class="main-input-normal" type="number" id="trim_time_start" min="0" max="1080" value=""> 秒 ～ <input class="main-input-normal" type="number" id="trim_time_end" min="0" max="1080" value=""> 秒
+                        <input class="main-input-normal" type="number" id="trim_time_start" min="0" max="1080" value="">
+                        秒 ～ <input class="main-input-normal" type="number" id="trim_time_end" min="0" max="1080"
+                                   value=""> 秒
                     </p>
                     <p class="disc-input">予測を開始・終了する動画の秒数を指定できます。（未入力の場合はすべて）</p>
                 </td>
@@ -238,16 +240,20 @@
                 <td colspan="2">
                     <p><label for="dnn_model">使用モデル</label>
                         <select class="main-input-full" id="dnn_model">
-                            <option value="miyabi_v2_sgd">MIYABI v2 SGDモデル</option>
-                            <option value="miyabi_v2_adagrad">MIYABI v2 Adagradモデル</option>
-                            <option value="miyabi_v2_adadelta">MIYABI v2 Adadeltaモデル</option>
-                            <option value="miyabi_v2_adam">MIYABI v2 Adamモデル</option>
-                            <option value="miyabi_v2_adamax">MIYABI v2 Adamaxモデル</option>
+                            <option value="miyabi_v2_adam" selected>MIYABI v2 Adamモデル</option>
                             <option value="my_model">独自モデルを読み込み（必要：学習済モデル）</option>
                             <option value="custom">独自学習（必要：学習データ・コーディング）</option>
                         </select>
                     </p>
                     <p class="disc-input">技予測に使用するモデルを選択します。</p>
+                    <div id="custom_caution" style="background: lightsalmon;">
+                        <table style="border: none;">
+                            <tr style="border: none;">
+                                <td style="border: none;"><i class="fas fa-exclamation-triangle"></i></td>
+                                <td style="border: none;">独自学習はベータ版の機能です。動作保証は一切行えませんのでご了承ください。</td>
+                            </tr>
+                        </table>
+                    </div>
                 </td>
             </tr>
             <tr id="my-data-option1">
@@ -256,7 +262,8 @@
                         <input id="custom_model_file_json" type="file" accept="application/json">
                     </p>
                     <p class="disc-input">学習済みモデルの構成ファイル（JSON形式）をアップロードします。<br/>以下ファイル含めアップロード形式について詳しくは<a
-                            href="https://github.com/imbellt/samurai/wiki/%E8%87%AA%E8%BA%AB%E3%81%AE%E3%83%A2%E3%83%87%E3%83%AB%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%99%E3%82%8B" target="_blank"
+                            href="https://github.com/imbellt/samurai/wiki/%E8%87%AA%E8%BA%AB%E3%81%AE%E3%83%A2%E3%83%87%E3%83%AB%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%99%E3%82%8B"
+                            target="_blank"
                             rel="noopener noreferrer">こちら</a>を参照ください。</p>
                 </td>
             </tr>
@@ -294,7 +301,8 @@
                         <input id="custom_data_file" type="file" accept="text/csv">
                     </p>
                     <p class="disc-input">モデルを学習するための学習データ（CSVデータ）をアップロードします。学習データの形式については<a
-                            href="https://github.com/imbellt/samurai/wiki/%E3%83%A2%E3%83%87%E3%83%AB%E3%81%AE%E7%8B%AC%E8%87%AA%E5%AD%A6%E7%BF%92" target="_blank"
+                            href="https://github.com/imbellt/samurai/wiki/%E3%83%A2%E3%83%87%E3%83%AB%E3%81%AE%E7%8B%AC%E8%87%AA%E5%AD%A6%E7%BF%92"
+                            target="_blank"
                             rel="noopener noreferrer">こちら</a>を参照ください。</p>
                     <ul class="md-checkbox-ul">
                         <li>
@@ -307,7 +315,9 @@
             </tr>
             <tr id="custom-option3-1">
                 <td>
-                    <p>テストデータ 抽出比率　<label for="valid_ratio"></label><input class="main-input-normal" type="number" id="valid_ratio" min="0" max="1" value="0.2" step="0.01"></p>
+                    <p>テストデータ 抽出比率　<label for="valid_ratio"></label><input class="main-input-normal" type="number"
+                                                                           id="valid_ratio" min="0" max="1" value="0.2"
+                                                                           step="0.01"></p>
                     <p class="disc-input">学習データの何割をテストデータに回すかを設定します。1を100%としたときの比率を小数点で入力してください。</p>
                 </td>
                 <td>
@@ -317,16 +327,26 @@
                             <label for="data_shuffle">抽出前にデータをシャッフルする</label>
                         </li>
                         <li><p class="disc-input-cb">テストデータを抽出する前に学習データの順序をランダムに並び替えます。<br/>（データの偏りを防ぐため目標ラベルセレクタの中でシャッフルを行います）</p></li>
-                        <li><p class="disc-input-cb">シャッフル乱数シード値　<label for="shuffle_seed"></label><input class="main-input-normal" type="number" id="shuffle_seed" min="1" max="9999999999" value="100" step="1"></p></li>
-                        <li><p class="disc-input-cb-sub">シャッフルを再現するためのシード値を入力してください。（空白の場合は完全ランダム・シード値はCSVファイルに保管されます）</p></li>
-                        <li id="data_shuffle_comp_visible1">
-                            <input type="checkbox" id="data_shuffle_comp" class="md-checkbox-checkbox" checked>
-                            <label for="data_shuffle_comp">シード連続学習</label>
-                        </li>
-                        <li id="data_shuffle_comp_visible2"><p class="disc-input-cb">データシャッフル＆モデル学習を設定回数分だけ連続的に実行します。<br/>（回数は20以下推奨）</p></li>
-                        <li id="data_shuffle_comp_visible3"><p class="disc-input-cb">シャッフル回数　<label for="shuffle_comp_times"></label><input class="main-input-normal" type="number" id="shuffle_comp_times" min="1" max="9999999999" value="5" step="1"></p></li>
-                        <li id="data_shuffle_comp_visible4"><p class="disc-input-cb-sub">シャッフル＆学習をおこなう回数を入力してください。（Epoch数ではありません）</p></li>
                     </ul>
+                    <div id="data_shuffle_comp_visible">
+                        <p class="disc-input-cb">シャッフル乱数シード値　<label for="shuffle_seed"></label><input
+                                class="main-input-normal" type="number" id="shuffle_seed" min="1" max="9999999999"
+                                value="100" step="1"></p>
+                        <p class="disc-input-cb-sub">シャッフルを再現するためのシード値を入力してください。（空白の場合は完全ランダム・シード値はCSVファイルに保管されます）</p>
+                        <ul class="md-checkbox-ul" style="margin-top: 15px;">
+                            <li style="display: block;">
+                                <input type="checkbox" id="data_shuffle_comp" class="md-checkbox-checkbox">
+                                <label for="data_shuffle_comp">シード連続学習</label>
+                            </li>
+                            <li><p class="disc-input-cb">データシャッフル＆モデル学習を設定回数分だけ連続的に実行します。<br/>（有効にすると分析結果のCSVのみDLが可能です。）</p></li>
+                        </ul>
+                        <div id="data_shuffle_comp_count_visible">
+                            <p class="disc-input-cb">シャッフル回数　<label for="shuffle_comp_times"></label><input
+                                    class="main-input-normal" type="number" id="shuffle_comp_times" min="1" max="9999999999"
+                                    value="5" step="1"></p>
+                            <p class="disc-input-cb-sub">シャッフル＆学習をおこなう回数を入力してください。（Epoch数ではありません）</p>
+                        </div>
+                    </div>
                 </td>
             </tr>
             <tr id="custom-option3-2">
@@ -340,21 +360,19 @@
             <tr id="custom-option4">
                 <td colspan="2">
                     <p>学習モデル定義</p>
-                    <p class="disc-input">TensorFlow jsの<b>Layers API</b>形式でモデル作成のプログラムを入力してください。（詳細は<a href="https://www.tensorflow.org/js/guide/train_models?hl=ja">TensorFlow jsの公式ドキュメント</a>を参照ください。）</p>
+                    <p class="disc-input">TensorFlow jsの<b>Layers API</b>形式でモデル作成のプログラムを入力してください。（詳細は<a
+                            href="https://www.tensorflow.org/js/guide/train_models?hl=ja">TensorFlow jsの公式ドキュメント</a>を参照ください。）
+                    </p>
                     <div id="editor_a" style="min-height: 300px">const model = tf.sequential();
-model.add(tf.layers.dense({units: 1024, activation: 'relu', inputShape: [16]}));
-model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
-model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
-model.add(tf.layers.dense({units: 1024, activation: 'relu'}));
+model.add(tf.layers.dense({units: 100, activation: 'relu', inputShape: [16]}));
 model.add(tf.layers.dense({units: 4, activation: 'softmax'}));
-model.compile({optimizer: tf.train.adam(0.001, 0.9, 0.999), loss: 'categoricalCrossentropy', metrics: ['accuracy']});
+model.compile({optimizer: tf.train.adam(0.001, 0.9, 0.999), loss: 'categoricalCrossentropy',
+metrics: ['accuracy']});
 return model;</div>
                     <p class="disc-input">注意事項</p>
                     <ul class="disc-input">
                         <li>作成したモデルは最後にcompileを行い、returnで返してください。</li>
-                        <li>compile時は必ずmetricsでaccuracyを定めてください。（学習時に精度取得の関数を通過するため）</li>
-                        <li>現時点では、エラー時にWeb UI上ではコールバックが行われません。（デバッグ時はDevToolsコンソールを常時開いておくことをおすすめします。）</li>
-                        <li>入力ユニット数はアーキテクチャ設定、出力ユニット数は目標ラベルセレクタ設定に表示されている数字と必ず一致させてください。（ユニット数が一致しないと学習時にエラーが発生します。）</li>
+                        <li>コード作成前に必ず<a href="https://github.com/imbellt/samurai/wiki/%E3%83%A2%E3%83%87%E3%83%AB%E3%81%AE%E7%8B%AC%E8%87%AA%E5%AD%A6%E7%BF%92#%E3%83%A2%E3%83%87%E3%83%AB%E4%BD%9C%E6%88%90">こちら</a>のWikiに記載の注意事項をご確認ください。</li>
                     </ul>
                 </td>
             </tr>
@@ -403,14 +421,14 @@ return model;</div>
             <tr id="custom-option6">
                 <td>
                     <p>エポック数（学習回数）
-                    <label for="epoch_num"></label><input class="main-input-normal" type="number"
-                                                          id="epoch_num" min="1" max="2000" value="120"></p>
+                        <label for="epoch_num"></label><input class="main-input-normal" type="number"
+                                                              id="epoch_num" min="1" max="2000" value="120"></p>
                     <p class="disc-input">モデルの学習回数を設定します。（最大2000回）</p>
                 </td>
                 <td>
                     <p>バッチサイズ（損失関数の範囲）
-                    <label for="batch_size"></label><input class="main-input-normal" type="number"
-                                                                          id="batch_size" min="1" max="100" value="32"></p>
+                        <label for="batch_size"></label><input class="main-input-normal" type="number"
+                                                               id="batch_size" min="1" max="100" value="32"></p>
                     <p class="disc-input">モデルを評価する際、損失関数に入力されるデータの大きさ（バッチサイズ）を設定します。（最大100）</p>
                 </td>
             </tr>
@@ -432,12 +450,31 @@ return model;</div>
                         </li>
                         <li><p class="disc-input-cb">実際に予測は行わず、モデルのみを作成します。（モデルのダウンロードは可能です）</p></li>
                         <li>
-                            <input type="checkbox" id="comp_model" class="md-checkbox-checkbox" checked>
-                            <label for="comp_model">層数・ユニット数によるモデル比較をおこなう ※開発者専用</label>
+                            <input type="checkbox" id="comp_model" class="md-checkbox-checkbox">
+                            <label for="comp_model">層数・ユニット数によるモデル比較をおこなう ※開発者向け</label>
                             <span class="md-checkbox-ripple"></span>
                         </li>
-                        <li><p class="disc-input-cb">層数・ユニット数を変化させながらモデルを学習させます。（デバッグモデルを使用するためモデル定義のコードはすべて無視されます。また検証ステップ・範囲はtools.jsで定義しています。）</p></li>
+                        <li><p class="disc-input-cb">
+                            層数・ユニット数を変化させながらモデルを学習させます。<br/>1. tools.jsのcompModel関数にて定義したデバッグモデルを使用します。変更したい際はDevToolsを使用してください。<br/>2. 有効にすると分析結果のCSVのみDLが可能です。</p>
+                        </li>
                     </ul>
+                    <div id="model_comp_visible">
+                            <p class="disc-input-cb">層数：　<label for="comp_model_layers_start"></label><input
+                                    class="main-input-normal" type="number" id="comp_model_layers_start" min="1" max="100"
+                                    value="1" step="1"> ～ <label for="comp_model_layers_end"></label><input
+                                    class="main-input-normal" type="number" id="comp_model_layers_end" min="1" max="100"
+                                    value="5" step="1">（ステップ数；<label for="comp_model_layers_steps"></label><input
+                                    class="main-input-normal" type="number" id="comp_model_layers_steps" min="1" max="100"
+                                    value="5" step="1">）　ユニット数：　<label for="comp_model_units_start"></label><input
+                                class="main-input-normal" type="number" id="comp_model_units_start" min="1" max="100"
+                                value="10" step="1"> ～ <label for="comp_model_units_end"></label><input
+                                class="main-input-normal" type="number" id="comp_model_units_end" min="1" max="100"
+                                value="50" step="1"></p>（ステップ数；<label for="comp_model_units_steps"></label><input
+                            class="main-input-normal" type="number" id="comp_model_units_steps" min="1" max="100"
+                            value="5" step="1">）
+                            <p class="disc-input-cb-sub">比較するパラメータの範囲を指定してください。</p>
+                    </div>
+
                 </td>
             </tr>
             </tbody>
@@ -445,10 +482,12 @@ return model;</div>
         <div class="caution-info">
             <h3>注意事項</h3>
             <ul>
-                <li style="margin-bottom: 20px;"><p>入力フォームに対する規則チェック機能は現時点では未実装のため、全角数字などを入力するとサイトがフリーズする可能性があります。くれぐれもご注意ください。</p></li>
+                <li style="margin-bottom: 20px;"><p>
+                    入力フォームに対する規則チェック機能は現時点では未実装のため、全角数字などを入力するとサイトがフリーズする可能性があります。くれぐれもご注意ください。</p></li>
                 <li><p>本システムはGPU（WebGL）を使用しています。本システムを利用する際はなるべくグラフィックスに特化したハードウェアを使用してください。</p></li>
                 <li><p>PCの性能を最大限発揮するため、<!--suppress HtmlUnknownTarget -->
-                    <a href="ms-settings:display-advancedgraphics">こちら</a>をクリックして使用ブラウザのオプションを『高パフォーマンス』に設定してください。<br/>（macOSの場合は<a href="https://support.apple.com/ja-jp/HT202043">こちら</a>を参考にGPUの自動切り替えを無効化してください。）</p></li>
+                    <a href="ms-settings:display-advancedgraphics">こちら</a>をクリックして使用ブラウザのオプションを『高パフォーマンス』に設定してください。<br/>（macOSの場合は<a
+                            href="https://support.apple.com/ja-jp/HT202043">こちら</a>を参考にGPUの自動切り替えを無効化してください。）</p></li>
                 <li><p>本システムは1フレームごとに予測情報などをIndexedDB内に格納しております。（長時間の予測を行うと容量不足によるクエリエラーが発生する可能性があります。）</p></li>
             </ul>
         </div>

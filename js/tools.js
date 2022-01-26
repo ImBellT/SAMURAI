@@ -86,7 +86,7 @@ async function downloadModel(config, model) {
         }
 
         const weightsManifest = [{
-            paths: ['./' + "samurai_custom_model_weights.bin"],
+            paths: ['./' + "weights.bin"],
             weights: modelArtifact.weightSpecs
         }];
         return [await modelBlob(), await weightBlob()];
@@ -141,36 +141,39 @@ async function downloadModel(config, model) {
         return new Blob([bom, csv_string], {type: "text/csv"}); // 抽出したデータをCSV形式に変換
     }
 
+    // モデル比較用のCSVを出力
     async function generateCompCSV() {
+        const comp_model_range = [1, [Number(document.getElementById("comp_model_layers_start").value), Number(document.getElementById("comp_model_layers_end").value), Number(document.getElementById("comp_model_layers_steps").value)],
+            [Number(document.getElementById("comp_model_units_start").value), Number(document.getElementById("comp_model_units_end").value), Number(document.getElementById("comp_model_units_steps").value)]]; // シャッフル＆モデル比較（始点はどっちも1以上が必要）
         let model_result_all = [];
-        for (let i = comp_model_range[1][0] - 1; i < comp_model_range[1][1]; i += comp_model_range[1][2]) {
-            model_result_all[i] = await calcModelAverage(i);
+        for (let i = 0; i <= comp_model_range[1][1] - comp_model_range[1][0]; i += comp_model_range[1][2]) {
+            model_result_all[i] = await calcModelAverage(i + comp_model_range[1][0] - 1);
         }
         let model_result_min = [], model_result_full = [];
         model_result_all.forEach(e => {
             const tmp = transpose(e);
             model_result_min = model_result_min.concat(tmp);
         });
+        console.log(JSON.parse(JSON.stringify(model_result_all)));
         //共通項を書き込み
-        for(let i=0; i < model_result_all[0][0].length; i++){
-            model_result_full[i+1] = [];
-            model_result_full[i+1][0] = model_result_all[0][1][i]; // 縦軸のユニット数を定める
+        for (let i = 0; i < model_result_all[0][0].length; i++) {
+            model_result_full[i + 1] = [];
+            model_result_full[i + 1][0] = model_result_all[0][1][i]; // 縦軸のユニット数を定める
         }
         model_result_full[0] = []; // 見出し用に初期化
-        for(let i=0; i < model_result_all.length; i++){
-            model_result_full[0][i+1] = model_result_all[i][0][0]; // 横軸の層数を定める
+        for (let i = 0; i < model_result_all.length; i++) {
+            model_result_full[0][i + 1] = model_result_all[i][0][0]; // 横軸の層数を定める
         }
         const label = ["評価精度", "評価損失", "精度", "損失"];
         let model_result_full_all = [[], [], [], []];
         for (let x = 0; x < label.length; x++) { // 評価項目ごとに実行
             model_result_full[0][0] = label[x];
             // 測定データを書き込み
-            for(let i=0; i < model_result_all[0][0].length; i++){
-                for(let j=0; j < model_result_all.length; j++){
-                    model_result_full[i+1][j+1] = model_result_all[j][2+x][i]; // i+1が縦列（ユニット数で見出しを飛ばしている）、jが横列でレイヤー数に準ずる。そこでallの配列に沿う。
+            for (let i = 0; i < model_result_all[0][0].length; i++) {
+                for (let j = 0; j < model_result_all.length; j++) {
+                    model_result_full[i + 1][j + 1] = model_result_all[j][2 + x][i]; // i+1が縦列（ユニット数で見出しを飛ばしている）、jが横列でレイヤー数に準ずる。そこでallの配列に沿う。
                 }
             }
-            model_result_full_all[x] = JSON.parse(JSON.stringify(model_result_full));
         }
 
         let csv_string_min = "層数,ユニット数,評価精度,評価損失,精度,損失\r\n";
@@ -179,7 +182,7 @@ async function downloadModel(config, model) {
             csv_string_min += '\r\n';
         });
         let csv_string_full = [];
-        for(let i=0; i < model_result_full_all.length; i++){
+        for (let i = 0; i < model_result_full_all.length; i++) {
             csv_string_full[i] = "";
             model_result_full_all[i].forEach(d => {
                 csv_string_full[i] += d.join(","); // 配列ごとの区切りを「,」をつけて一列化
@@ -205,17 +208,15 @@ async function downloadModel(config, model) {
         zip.file("損失.csv", output[4]);
     } else {
         // 定義したファイルをアーカイブに追加
-        let part = zip.folder("モデルデータ・学習データ");
-        for (let i = 0; i < model.length; i++) {
-            const [data_train, data_test] = await generateData(model);
-            let x = part.folder(String(i));
-            x.file("学習データ.json", data_train);
-            x.file("テストデータ.json", data_test);
-        }
+        const [weights, std, data_train, data_test] = await generateData(model);
+        zip.file("学習データ.json", data_train);
+        zip.file("テストデータ.json", data_test);
         const [model_data, info_json] = await generateConfig(model);
         zip.file("model.json", model_data);
+        zip.file("weights.bin", weights);
+        zip.file("standard.json", std);
         zip.file("モデル仕様.json", info_json);
-        zip.file("学習精度・損失.csv", generateHistory(model));
+        //zip.file("学習精度・損失.csv", generateHistory(model));
     }
     zip.generateAsync({type: "blob"}).then(function (dataBlob) {
         const DownloadUrl = URL.createObjectURL(dataBlob); // BlobデータをURLに変換
@@ -315,6 +316,7 @@ async function learnModel(csv_file, csv_file_test, num, config, layers = 4, unit
     x_key_test = KeyStandardization(x_key_test, param);
     const x_tensor = tf.tensor2d(KeyToValue(x_key));
     const y_tensor = tf.tensor2d(LabelOneHotEncode(y, param));
+    const test_tensor = [tf.tensor2d(KeyToValue(x_key_test)), tf.tensor2d(LabelOneHotEncode(y_test, param))];
 
     function onEpochEnd(epoch, logs) {
         switch (num[0]) {
@@ -339,7 +341,7 @@ async function learnModel(csv_file, csv_file_test, num, config, layers = 4, unit
     const info = await model.fit(x_tensor, y_tensor, {
         batchSize: Number(document.getElementById("batch_size").value),
         epochs: Number(document.getElementById("epoch_num").value),
-        validationData: [tf.tensor2d(KeyToValue(x_key_test)), tf.tensor2d(LabelOneHotEncode(y_test, param))],
+        validationData: test_tensor,
         callbacks: {onEpochEnd}
     });
 
@@ -363,17 +365,20 @@ async function UseCustomModel(csv_file, csv_file_test, config) {
 
     if (isNaN(config.seed)) config.seed = Math.floor(Math.random() * 100);
 
-    if (!config.data_shuffle && !config.data_shuffle_comp) return await learnModel(csv_file, csv_file_test, [-1], config);
+    if (config.custom_valid) return await learnModel(csv_file, csv_file_test, [-1], config);
 
     const [learning_mode, layer_num_range, unit_num_range] = (() => {
         if (config.comp_model) {
-            return comp_model_range; // シャッフル＆モデル比較（始点はどっちも1以上が必要）
+            return [1, [Number(document.getElementById("comp_model_layers_start").value), Number(document.getElementById("comp_model_layers_end").value), Number(document.getElementById("comp_model_layers_steps").value)],
+                [Number(document.getElementById("comp_model_units_start").value), Number(document.getElementById("comp_model_units_end").value), Number(document.getElementById("comp_model_units_steps").value)]]; // シャッフル＆モデル比較（始点はどっちも1以上が必要）
         } else if (!config.custom_valid && config.data_shuffle && config.data_shuffle_comp) {
             return [0, [1, 1, 1], [1, 1, 1]]; // シャッフルのみ
         } else {
             throw new Error("学習方法の設定時にエラーが発生しました。");
         }
     })();
+    // 作ったデータは除外
+
     window.indexedDB.deleteDatabase("samurai_DB_model");
     let openReq = indexedDB.open("samurai_DB_model", 1);
     openReq.onupgradeneeded = function (event) {
@@ -418,7 +423,10 @@ async function calcModelAverage(layer_num) {
     for (let i = 0; i < resume_data.length; i++) {
         units_num[i] = resume_data[i].key;
         layers_num[i] = layer_num + 1;
-        model_val_accuracy[i] = 0, model_val_loss[i] = 0, model_accuracy[i] = 0, model_loss[i] = 0;
+        model_val_accuracy[i] = 0;
+        model_val_loss[i] = 0;
+        model_accuracy[i] = 0;
+        model_loss[i] = 0;
         resume_data[i].data.info.forEach(e => {
             model_val_accuracy[i] += e.history.val_acc.slice(-1)[0] / epoch_length; // 評価精度の最終結果のみを加算する
             model_val_loss[i] += e.history.val_loss.slice(-1)[0] / epoch_length;

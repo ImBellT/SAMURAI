@@ -22,7 +22,8 @@ async function CreatePoseModel(inputVideo, poseParam) {
         const detectorConfig = {
             modelType: poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING, // モデルはLightingを使用
             multiPoseMaxDimension: 512,
-            enableTracking: false // トラッキング（追従）を有効化。これで一度とらえた人物を失うまで追い続ける。
+            enableTracking: true,
+            trackerType: poseDetection.TrackerType.BoundingBox // トラッキング（追従）を有効化。これで一度とらえた人物を失うまで追い続ける。
         };
         netModel = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, detectorConfig);
     } else if (poseParam.model.value === "move_net_thunder") {
@@ -72,8 +73,8 @@ function AdjustPoseIndex(pose){
     let pose_size1 = [];
 
     for(let i=0; i < pose.length; i++){ // 全骨格のサイズを導出
-        let size1 = CalcDistance(pose[i].keypoints[5], pose[i].keypoints[11]);
-        let size2 = CalcDistance(pose[i].keypoints[6], pose[i].keypoints[12]);
+        let size1 = calcDistance(pose[i].keypoints[5], pose[i].keypoints[11]);
+        let size2 = calcDistance(pose[i].keypoints[6], pose[i].keypoints[12]);
         pose_size1[i] = size1.value > size2.value ? size1.value : size2.value;
     }
     const pose_size2 = JSON.parse(JSON.stringify(pose_size1)); // pose_size2にソート前の配列を複製する
