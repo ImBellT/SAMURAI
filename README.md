@@ -4,7 +4,7 @@
 # デモ
 こちらからデモが実行できます。
 
-https://samurai.bellt.me
+https://imbellt.github.io/samurai/
 （Google Chrome・Microsoft Edge推奨）
 
 ※JavaScriptを使用しているため、処理速度はお使いの端末に依存します。
